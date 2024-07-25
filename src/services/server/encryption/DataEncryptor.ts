@@ -3,6 +3,25 @@ import { TextEncoder, TextDecoder } from 'util';
 import { inject } from 'undecorated-di';
 
 export const DataEncryptor = inject(
+
+  /**
+   * Encrypts and decrypts a string 
+   *
+   * @encryptData 
+   * @param data - string to encrypt
+   * @param key - a cryptoKey for encryption and decryption
+   * @returns A string with the initialization vector concatenated with the encrypted data
+   *
+   * @decryptData
+   * @param data - string with the initialization vector concatenated with encrypted data
+   * @returns unencrypted user data 
+   *
+   * @example
+   * const encryptedData = dataEncryptor.encryptData(userEmail, validKey)
+   * const decryptedData = dataEncryptor.decryptData(encryptedData)
+   * console.log(decryptedData) - prints out userEmail
+   */
+  
   class DataEncryptor implements DataEncryptorClassMethods {
     private key: CryptoKey | null;
     constructor() {
