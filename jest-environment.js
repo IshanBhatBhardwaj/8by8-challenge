@@ -13,7 +13,6 @@ module.exports = class CustomJestEnvironment extends JestEnvironmentJSDOM {
     global.Request = Request;
     global.Response = Response;
     global.Headers = Headers;
-    global.crypto = crypto;
     global.crypto.subtle = webcrypto.subtle;
   }
 };
