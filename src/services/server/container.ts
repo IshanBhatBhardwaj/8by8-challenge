@@ -12,7 +12,7 @@ import { redirectIfSignedInWithSupabase } from './redirect-if-signed-in/redirect
 import { redirectIfSignedOutFromSupabase } from './redirect-if-signed-out/redirect-if-signed-out-from-supabase';
 import { refreshSupabaseSession } from './refresh-session/refresh-supabase-session';
 import { SupabaseUserRepository } from './user-repository/supabase-user-repository';
-import { DataEncryptor } from './encryption/DataEncryptor';
+import { WebCryptoSubtleEncryptor } from './encryptor/web-crypto-subtle-encryptor';
 
 /**
  * An inversion of control container that should be used to obtain instances of
@@ -62,6 +62,6 @@ export const serverContainer = ContainerBuilder.createBuilder()
   )
   .registerFunction(SERVER_SERVICE_KEYS.refreshSession, refreshSupabaseSession)
   .registerClass(SERVER_SERVICE_KEYS.UserRepository, SupabaseUserRepository)
-  .registerClass(SERVER_SERVICE_KEYS.DataEncryptorClassMethods, DataEncryptor)
+  .registerClass(SERVER_SERVICE_KEYS.Encryptor, WebCryptoSubtleEncryptor)
 
   .build();
