@@ -10,22 +10,14 @@ export const WebCryptoSubtleEncryptor = inject(
    * const decryptedData = dataEncryptor.decryptData(encryptedData)
    * console.log(decryptedData) - prints out userEmail
    */
-
-  class DataEncryptor implements Encryptor {
-    private encrypted: boolean;
-
-    constructor() {
-      this.encrypted = false;
-    }
-
+  class WebCryptoSubtleEncryptor implements Encryptor {
     /**
      * @encryptData
      * @param data - string to encrypt
      * @param key - a cryptoKey for encryption and decryption
      * @returns A string with the initialization vector concatenated with the encrypted data
      */
-
-    async encryptData(data: string, key: CryptoKey): Promise<string> {
+    async encrypt(data: string, key: CryptoKey): Promise<string> {
       const encoder = new TextEncoder();
       const encodedData = encoder.encode(data);
       const ivAsUint8 = crypto.getRandomValues(new Uint8Array(12));
@@ -49,23 +41,14 @@ export const WebCryptoSubtleEncryptor = inject(
         .map(byte => String.fromCharCode(byte))
         .join('');
 
-      this.encrypted = true;
       return ivAsString + encryptedDataAsString;
     }
-
     /**
      * @decryptData
      * @param data - string with the initialization vector concatenated with encrypted data
      * @returns unencrypted user data
      */
-
-    async decryptData(dataToDecrypt: string, key: CryptoKey): Promise<string> {
-      if (!this.encrypted) {
-        throw new Error(
-          'Trying to decrypt data before encyrption is not allowed.',
-        );
-      }
-
+    async decrypt(dataToDecrypt: string, key: CryptoKey): Promise<string> {
       if (dataToDecrypt.length < 13) {
         throw new Error('Trying to decrypt an empty string is not allowed.');
       }
