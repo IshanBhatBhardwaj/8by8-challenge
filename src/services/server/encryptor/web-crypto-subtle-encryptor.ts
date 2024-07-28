@@ -46,6 +46,8 @@ export const WebCryptoSubtleEncryptor = inject(
     /**
      * @decryptData
      * @param data - string with the initialization vector concatenated with encrypted data
+     * @remarks can throw error if the input string is not valid
+     * @example if "testemail@123.com" was passed in with no IV vector, this method will throw an error of "The provided data is too small."
      * @returns unencrypted user data
      */
     async decrypt(dataToDecrypt: string, key: CryptoKey): Promise<string> {
