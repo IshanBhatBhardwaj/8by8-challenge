@@ -8,14 +8,45 @@ const testFilePath = path.join(__dirname, 'src/__tests__/supabase/migrations', '
 
 // Function to create a symbolic link
 function createSymlink(source, destination) {
-  fs.symlink(source, destination, 'file', (err) => {
-    if (err) {
-      console.error(`Error creating symlink: ${err.message}`);
+  fs.stat(destination, (err, stats) => {
+    if (!err) {
+      console.log(`Existing file or symlink at ${destination}:`);
+      console.log(`- Is a symlink: ${stats.isSymbolicLink()}`);
+      console.log(`- Is a file: ${stats.isFile()}`);
+      console.log(`- Is a directory: ${stats.isDirectory()}`);
+      console.log(`- Size: ${stats.size} bytes`);
+      console.log(`- Last modified: ${stats.mtime}`);
+      
+      if (stats.isSymbolicLink() || stats.isFile()) {
+        console.log(`Removing existing file or symlink at ${destination}.`);
+        fs.unlink(destination, (unlinkErr) => {
+          if (unlinkErr) {
+            console.error(`Error removing existing file: ${unlinkErr.message}`);
+          } else {
+            fs.symlink(source, destination, 'file', (symlinkErr) => {
+              if (symlinkErr) {
+                console.error(`Error creating symlink: ${symlinkErr.message}`);
+              } else {
+                console.log(`Symlink created: ${destination} -> ${source}`);
+              }
+            });
+          }
+        });
+      } else {
+        console.error(`Error: ${destination} exists but is not a file or symlink.`);
+      }
+    } else if (err.code === 'ENOENT') {
+      fs.symlink(source, destination, 'file', (symlinkErr) => {
+        if (symlinkErr) {
+          console.error(`Error creating symlink: ${symlinkErr.message}`);
+        } else {
+          console.log(`Symlink created: ${destination} -> ${source}`);
+        }
+      });
     } else {
-      console.log(`Symlink created: ${destination} -> ${source}`);
+      console.error(`Error checking destination: ${err.message}`);
     }
   });
 }
 
-// Create the symlink
 createSymlink(databaseFilePath, testFilePath);
