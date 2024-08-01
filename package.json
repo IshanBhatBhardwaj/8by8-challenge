@@ -15,7 +15,8 @@
     "lint": "next lint",
     "format": "prettier --write \"**/*.+(js|ts|json)\"",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build", 
+    "symlink" : "node createSymlinks.js"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",
