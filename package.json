@@ -11,12 +11,13 @@
     "build": "next build",
     "start": "next start",
     "test": "jest --no-watch --runInBand",
-    "test:ci": "jest --ci --runInBand -u",
+    "test:ci": "npm run copy-migration-to-test-folder && jest --ci --runInBand -u",
     "lint": "next lint",
     "format": "prettier --write \"**/*.+(js|ts|json)\"",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "symlink": "node createSymlinks.js"
+    "symlink": "node create-symlink.js",
+    "copy-migration-to-test-folder": "node copy-migration-to-test-folder.js"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",
