@@ -19,4 +19,7 @@ fs.copyFile(sourcePath, destPath, err => {
   if (err) {
     console.error('Error copying the file:', err);
   }
+  else {
+    console.log("Copied 20240711063356_initial_schema.sql into /src/__tests__/supabase/migrations\n")
+  }
 });
