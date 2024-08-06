@@ -1,1 +1,0 @@
-/Users/ishanbhardwaj/Desktop/GitHub/8by8-challenge/supabase/migrations/20240711063356_initial_schema.sql

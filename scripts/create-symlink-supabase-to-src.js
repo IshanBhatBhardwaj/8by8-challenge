@@ -1,20 +1,9 @@
-/**
- * creates symLink between @/supabase/migrations/20240711063356_initial_schema.sql --> src/__tests__/supabase/migrations/20240711063356_initial_schema.sql
- */
 const fs = require('fs');
 const path = require('path');
 
-// Define the paths to the files
-const databaseFilePath = path.join(
-  __dirname,
-  '../supabase/migrations',
-  '20240711063356_initial_schema.sql',
-);
-const testFilePath = path.join(
-  __dirname,
-  '../src/__tests__/supabase/migrations',
-  '20240711063356_initial_schema.sql',
-);
+// Define the paths to the directories
+const databaseDirPath = path.join(__dirname, '../supabase/migrations');
+const testDirPath = path.join(__dirname, '../src/__tests__/supabase/migrations');
 
 // Function to create a symbolic link
 function createSymlink(source, destination) {
@@ -27,13 +16,13 @@ function createSymlink(source, destination) {
       console.log(`- Size: ${stats.size} bytes`);
       console.log(`- Last modified: ${stats.mtime}\n`);
 
-      if (stats.isSymbolicLink() || stats.isFile()) {
-        console.log(`Removing existing file or symlink at ${destination}.`);
+      if (stats.isSymbolicLink() || stats.isDirectory()) {
+        console.log(`Removing existing directory or symlink at ${destination}.`);
         fs.unlink(destination, unlinkErr => {
           if (unlinkErr) {
-            console.error(`Error removing existing file: ${unlinkErr.message}\n`);
+            console.error(`Error removing existing directory: ${unlinkErr.message}\n`);
           } else {
-            fs.symlink(source, destination, 'file', symlinkErr => {
+            fs.symlink(source, destination, 'dir', symlinkErr => {
               if (symlinkErr) {
                 console.error(`Error creating symlink: ${symlinkErr.message}\n`);
               } else {
@@ -43,12 +32,10 @@ function createSymlink(source, destination) {
           }
         });
       } else {
-        console.error(
-          `Error: ${destination} exists but is not a file or symlink.\n`,
-        );
+        console.error(`Error: ${destination} exists but is not a directory or symlink.\n`);
       }
     } else if (err.code === 'ENOENT') {
-      fs.symlink(source, destination, 'file', symlinkErr => {
+      fs.symlink(source, destination, 'dir', symlinkErr => {
         if (symlinkErr) {
           console.error(`Error creating symlink: ${symlinkErr.message}\n`);
         } else {
@@ -61,4 +48,4 @@ function createSymlink(source, destination) {
   });
 }
 
-createSymlink(databaseFilePath, testFilePath);
+createSymlink(databaseDirPath, testDirPath);
