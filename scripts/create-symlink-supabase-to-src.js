@@ -17,20 +17,7 @@ function createSymlink(source, destination) {
       console.log(`- Last modified: ${stats.mtime}\n`);
 
       if (stats.isSymbolicLink() || stats.isDirectory()) {
-        console.log(`Removing existing directory or symlink at ${destination}.`);
-        fs.unlink(destination, unlinkErr => {
-          if (unlinkErr) {
-            console.error(`Error removing existing directory: ${unlinkErr.message}\n`);
-          } else {
-            fs.symlink(source, destination, 'dir', symlinkErr => {
-              if (symlinkErr) {
-                console.error(`Error creating symlink: ${symlinkErr.message}\n`);
-              } else {
-                console.log(`Symlink created: ${destination} -> ${source}\n`);
-              }
-            });
-          }
-        });
+        console.error("Symlink or Directory already exists. Please remove before running this script.")
       } else {
         console.error(`Error: ${destination} exists but is not a directory or symlink.\n`);
       }
