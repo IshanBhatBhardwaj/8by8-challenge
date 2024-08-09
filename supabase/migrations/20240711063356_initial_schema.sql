@@ -87,7 +87,7 @@ using ((select auth.uid()) = player_id);
 create table public.registration_information (
   id serial,
   user_id uuid not null references public.users on delete cascade, 
-  state_ varchar(255) not null,
+  us_state varchar(255) not null,
   city varchar(255) not null, 
   street varchar(255) not null,
   name_first varchar(255) not null, 
