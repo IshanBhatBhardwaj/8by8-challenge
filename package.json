@@ -17,7 +17,8 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "create-symlink-supabase-to-src": "node scripts/create-symlink-supabase-to-src.js",
-    "copy-migration-to-test-folder": "node scripts/copy-migration-to-test-folder.js"
+    "copy-migration-to-test-folder": "node scripts/copy-migration-to-test-folder.js",
+    "create-crypto-key": "node scripts/create-cryptoKey.js"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",

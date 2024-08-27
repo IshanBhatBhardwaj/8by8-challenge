@@ -96,9 +96,9 @@ create table public.registration_information (
   zip varchar(255) not null, 
   email varchar(255) not null, 
   citizen varchar(255) not null, 
-  eighteenPlus varchar(255) not null, 
+  eighteen_plus varchar(255) not null, 
   party varchar(255) not null, 
-  idNumber varchar(255) not null, 
+  id_number varchar(255) not null, 
   primary key (id, user_id)
 );
 
