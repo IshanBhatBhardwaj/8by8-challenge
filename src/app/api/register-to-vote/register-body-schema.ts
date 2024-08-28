@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 //Potential Fix: Validate better. For example, in us_state, is there a way to make sure the input is an actual state? Is this needed?
 export const registerBodySchema = z.object({
+  user_id: z.string().nullable(),
   us_state: z.string().min(1),
   city: z.string().min(1),
   street: z.string().min(1),
@@ -13,5 +14,5 @@ export const registerBodySchema = z.object({
   citizen: z.string().min(1),
   eighteen_plus: z.string().min(1),
   party: z.string().min(1),
-  idNumber: z.string().min(1),
+  id_number: z.string().min(1),
 });

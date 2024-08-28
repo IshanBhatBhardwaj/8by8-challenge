@@ -52,17 +52,26 @@ export const VoterRegistrationRepository = inject(
         for (const key in encryptedObject) {
           if (Object.prototype.hasOwnProperty.call(encryptedObject, key)) {
             const typedKey = key as keyof typeof encryptedObject;
-            const encryptedValue = await dataEncryptor.encrypt(
-              encryptedObject[typedKey],
-              cryptoKey,
-            );
-            encryptedObject[typedKey] = encryptedValue;
+            const value = encryptedObject[typedKey];
+            if (value) {
+              if (typedKey === "user_id") {
+                encryptedObject["user_id"] = id;
+                continue
+              }
+              const encryptedValue = await dataEncryptor.encrypt(
+                value,
+                cryptoKey,
+              );
+              const base64EncodedValue = Buffer.from(encryptedValue).toString('base64');  
+              encryptedObject[typedKey] = base64EncodedValue;
+            }
           }
         }
         return encryptedObject;
       };
 
       const encryptedRegisterBody = await encryptRegisterBody(RegisterBody);
+      encryptRegisterBody.user_id = id
       const supabase =  this.createSupabaseClient();
 
       //This always throws an error

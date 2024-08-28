@@ -89,6 +89,7 @@ describe('VoterRegistrationRepository class', () => {
       }
 
     const registerBody = {
+        user_id: user.uid,
         us_state: 'FL',
         city: 'Davie',
         street: '2161 SW 152 Ter',
@@ -100,12 +101,11 @@ describe('VoterRegistrationRepository class', () => {
         citizen: 'yes',
         eighteen_plus: 'yes',
         party: 'Democrat',
-        idNumber: '123',
+        id_number: '123',
     };
 
     const voterRegistrationRepository = new VoterRegistrationRepository(createSupabaseClient, dataEncryptor)
     //this next line throws an error near line 73 in the voterRegistrationRepository class
-    console.log
     await voterRegistrationRepository.insertVoterRegistrationInfo(user.uid, registerBody)
 
     const newUser = await userRepository.getUserById(user.uid);
@@ -117,7 +117,7 @@ describe('VoterRegistrationRepository class', () => {
     .from('users')
     .select(
       `*,
-      registration_information (us_state, city, street, name_first, name_last, dob, zip, email, citizen, eighteen_plus, party, id_number)`,
+      registration_information (user_id, us_state, city, street, name_first, name_last, dob, zip, email, citizen, eighteen_plus, party, id_number)`,
     )
     .eq('id', newUser.uid)
     .limit(1)
@@ -128,43 +128,41 @@ describe('VoterRegistrationRepository class', () => {
       }
     if (!dbUser) throw new Error("no user found");
 
-    /***
-     * The following code above throws an error: "public.registration_information" does not exist
-     * I have commmented out the next few lines of code in the meantime for debugging purposes
-     */
-    expect(3===3)
-    // const decryptInformation = async (encryptedObject: typeof registerBody) => {
-    //     const base64Key = PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY;
-    //     const rawKey = new Uint8Array(
-    //       atob(base64Key)
-    //         .split('')
-    //         .map(char => char.charCodeAt(0)),
-    //     );
+    const decryptInformation = async (encryptedObject: typeof registerBody) => {
+        const base64Key = PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY;
+        const rawKey = new Uint8Array(
+          atob(base64Key)
+            .split('')
+            .map(char => char.charCodeAt(0)),
+        );
 
-    //     const cryptoKey = await crypto.subtle.importKey(
-    //       'raw',
-    //       rawKey,
-    //       { name: 'AES-GCM' },
-    //       true,
-    //       ['encrypt', 'decrypt'],
-    //     );
-    //     const decryptedObject = { ...encryptedObject };
-    //     for (const key in encryptedObject) {
-    //       if (Object.prototype.hasOwnProperty.call(encryptedObject, key)) {
-    //         const typedKey = key as keyof typeof encryptedObject;
-    //         const decryptedValue = await dataEncryptor.decrypt(
-    //           encryptedObject[typedKey],
-    //           cryptoKey,
-    //         );
-    //         decryptedObject[typedKey] = decryptedValue;
-    //       }
-    //     }
-    //     return decryptedObject;
-    // }
-
-    // const decryptedObject = await decryptInformation(newUser.registration_information)
-    // expect(decryptedObject).toEqual(registerBody)
-
+        const cryptoKey = await crypto.subtle.importKey(
+          'raw',
+          rawKey,
+          { name: 'AES-GCM' },
+          true,
+          ['encrypt', 'decrypt'],
+        );
+        const decryptedObject = { ...encryptedObject };
+        for (const key in encryptedObject) {
+          if (Object.prototype.hasOwnProperty.call(encryptedObject, key)) {
+            const typedKey = key as keyof typeof encryptedObject;
+            const encryptedValueAsString = Buffer.from(encryptedObject[typedKey], 'base64').toString("utf-8")
+            if (typedKey === "user_id") {
+              decryptedObject["user_id"] = encryptedObject["user_id"]
+              continue
+            }
+            const decryptedValue = await dataEncryptor.decrypt(
+              encryptedValueAsString,
+              cryptoKey,
+            );
+            decryptedObject[typedKey] = decryptedValue;
+          }
+        }
+        return decryptedObject;
+    }
+    const decryptedObject = await decryptInformation(dbUser.registration_information[0])
+    expect(decryptedObject).toEqual(registerBody)
   })
 
   it("awards a user a badge", async () => {

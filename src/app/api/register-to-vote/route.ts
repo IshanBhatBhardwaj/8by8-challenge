@@ -42,6 +42,7 @@ export async function POST(response: NextRequest) {
       createSupabaseClient,
       encryptor,
     );
+
     voterRegistrationRepository.insertVoterRegistrationInfo(
       user.uid,
       registerBody,

@@ -2,6 +2,7 @@ import { Encryptor } from '../encryptor/encryptor';
 import type { Badge } from '@/model/types/badge';
 
 export interface RegisterBody {
+  user_id: string | null;
   us_state: string;
   city: string;
   street: string;
@@ -13,7 +14,7 @@ export interface RegisterBody {
   citizen: string;
   eighteen_plus: string;
   party: string;
-  idNumber: string;
+  id_number: string;
 }
 
 export interface VoterRepository {
