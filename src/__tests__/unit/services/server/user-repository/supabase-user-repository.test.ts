@@ -12,6 +12,8 @@ import { ServerError } from '@/errors/server-error';
 import { AuthError } from '@supabase/supabase-js';
 import type { CreateSupabaseClient } from '@/services/server/create-supabase-client/create-supabase-client';
 import type { IUserRecordParser } from '@/services/server/user-record-parser/i-user-record-parser';
+import type { Badge } from '@/model/types/badge';
+
 
 describe('SupabaseUserRepository', () => {
   let userRepository: InstanceType<typeof SupabaseUserRepository>;
@@ -305,4 +307,130 @@ describe('SupabaseUserRepository', () => {
       new ServerError('Failed to parse user data.', 400),
     );
   });
+
+  it('updates users register to vote task', async () => {
+    const supabase = createSupabaseClient();
+
+    // Create a challenger and award them an action badge.
+    const challengerMetadata = {
+      name: 'Challenger',
+      avatar: '0',
+      type: UserType.Challenger,
+      invite_code: createId(),
+    };
+
+    const { data: challengerData, error: challengerInsertionError } =
+      await supabase.auth.admin.createUser({
+        email: 'challenger@example.com',
+        email_confirm: true,
+        user_metadata: challengerMetadata,
+      });
+
+    if (challengerInsertionError) {
+      throw new Error(challengerInsertionError.message);
+    }
+
+    const authChallenger = challengerData.user!;
+
+    const user = await userRepository.getUserById(authChallenger.id);
+    if (!user) {
+      throw new Error(`No user found with id: ${authChallenger.id}`);
+    }
+    expect(user.completedActions.registerToVote).toBe(false);
+
+    await userRepository.updateRegisterToVoteAction(user.uid)
+
+    const newUser = await userRepository.getUserById(user.uid);
+    if (!newUser) {
+      throw new Error(`No newUser found with id: ${user.uid}`)
+    }
+    expect(newUser.completedActions.registerToVote).toBe(true);
+  });
+
+  it("awards a user a badge", async () => {
+    const supabase = createSupabaseClient();
+
+    // Create a challenger and award them an action badge.
+    const challengerMetadata = {
+      name: 'Challenger',
+      avatar: '0',
+      type: UserType.Challenger,
+      invite_code: createId(),
+    };
+
+    const { data: challengerData, error: challengerInsertionError } =
+      await supabase.auth.admin.createUser({
+        email: 'challenger@example.com',
+        email_confirm: true,
+        user_metadata: challengerMetadata,
+      });
+
+    if (challengerInsertionError) {
+      throw new Error(challengerInsertionError.message);
+    }
+
+    const authChallenger = challengerData.user!;
+
+    const user = await userRepository.getUserById(authChallenger.id);
+    if (!user) {
+      throw new Error(`No user found with id: ${authChallenger.id}`);
+    }
+
+    await userRepository.awardVoterRegistrationActionBadge(user.uid, user.badges)
+
+    const newUser = await userRepository.getUserById(user.uid);
+    if (!newUser) {
+      throw new Error(`No newUser found with id: ${user.uid}`);
+    }
+
+    const newUserActionBadge = [{action : "voterRegistration"}]
+    expect(newUser.badges.length === 1)
+    expect(newUser.badges === newUserActionBadge)
+  })
+
+  it("does not award user a badge when they have more than 8 badges or have voterRegistration badge", async () => {
+    const supabase = createSupabaseClient();
+
+    // Create a challenger and award them an action badge.
+    const challengerMetadata = {
+      name: 'Challenger',
+      avatar: '0',
+      type: UserType.Challenger,
+      invite_code: createId(),
+    };
+
+    const { data: challengerData, error: challengerInsertionError } =
+      await supabase.auth.admin.createUser({
+        email: 'challenger@example.com',
+        email_confirm: true,
+        user_metadata: challengerMetadata,
+      });
+
+    if (challengerInsertionError) {
+      throw new Error(challengerInsertionError.message);
+    }
+
+    const authChallenger = challengerData.user!;
+    const user = await userRepository.getUserById(authChallenger.id);
+    if (!user) {
+      throw new Error(`No user found with id: ${authChallenger.id}`);
+    }
+
+    let badgesArray: Badge[] = [{action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}]
+
+    await userRepository.awardVoterRegistrationActionBadge(user.uid, badgesArray)
+    let newUser = await userRepository.getUserById(user.uid);
+    if (!newUser) {
+      throw new Error(`No newUser found with id: ${user.uid}`);
+    }
+    expect(newUser.badges.length === 0)
+
+    badgesArray = [{action: Actions.VoterRegistration}]
+    await userRepository.awardVoterRegistrationActionBadge(user.uid, badgesArray)
+    newUser = await userRepository.getUserById(user.uid);
+    if (!newUser) {
+      throw new Error(`No newUser found with id: ${user.uid}`);
+    }
+    expect(newUser.badges.length === 0)
+})
 });

@@ -1,4 +1,5 @@
 import 'server-only';
+import { constants } from 'zlib';
 import { z } from 'zod';
 
 /**
@@ -22,8 +23,29 @@ export function readPrivateEnvironmentVariables() {
     CRYPTO_KEY: z
       .string({
         required_error:
-          'Could not load environment variable SUPABASE_SERVICE_ROLE_KEY',
+          'Could not load environment variable CRYPTO_KEY',
       })
-      .parse(process.env.CRYPTO_KEY),
+      .transform( async (key:string) : Promise<CryptoKey> => {
+
+        const rawKey = new Uint8Array(
+          atob(key)
+            .split('')
+            .map(char => char.charCodeAt(0)),
+        );
+
+        try {
+          const cryptoKey = await crypto.subtle.importKey(
+            'raw',
+            rawKey,
+            { name: 'AES-GCM' },
+            true,
+            ['encrypt', 'decrypt'],
+          );
+          return cryptoKey
+        } catch(e) {
+          throw new Error("Failed to import CryptoKey. Make Sure to run script first")
+        }
+      })
+      .parseAsync(process.env.CRYPTO_KEY)
   };
 }

@@ -61,27 +61,6 @@ describe('VoterRegistrationRepository class', () => {
     return resetAuthAndDatabase();
   });
 
-  it('updates users compeleted task', async () => {
-
-    const user = await userRepository.getUserById(authChallenger.id);
-    if (!user) {
-      throw new Error(`No user found with id: ${authChallenger.id}`);
-    }
-    expect(user.completedActions.registerToVote).toBe(false);
-
-    const voterRegistrationRepository = new VoterRegistrationRepository(
-      createSupabaseClient,
-      dataEncryptor,
-    );
-    await voterRegistrationRepository.updateUserCompletedTask(user.uid);
-
-    const newUser = await userRepository.getUserById(user.uid);
-    if (!newUser) {
-      throw new Error(`No newUser found with id: ${user.uid}`)
-    }
-    expect(newUser.completedActions.registerToVote).toBe(true);
-  });
-
   it("inserts encrypted register body onto supabase", async () => {
     const user = await userRepository.getUserById(authChallenger.id);
     if (!user) {
@@ -129,20 +108,8 @@ describe('VoterRegistrationRepository class', () => {
     if (!dbUser) throw new Error("no user found");
 
     const decryptInformation = async (encryptedObject: typeof registerBody) => {
-        const base64Key = PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY;
-        const rawKey = new Uint8Array(
-          atob(base64Key)
-            .split('')
-            .map(char => char.charCodeAt(0)),
-        );
-
-        const cryptoKey = await crypto.subtle.importKey(
-          'raw',
-          rawKey,
-          { name: 'AES-GCM' },
-          true,
-          ['encrypt', 'decrypt'],
-        );
+        const cryptoKey = await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY;
+        
         const decryptedObject = { ...encryptedObject };
         for (const key in encryptedObject) {
           if (Object.prototype.hasOwnProperty.call(encryptedObject, key)) {
@@ -163,59 +130,5 @@ describe('VoterRegistrationRepository class', () => {
     }
     const decryptedObject = await decryptInformation(dbUser.registration_information[0])
     expect(decryptedObject).toEqual(registerBody)
-  })
-
-  it("awards a user a badge", async () => {
-    const user = await userRepository.getUserById(authChallenger.id);
-    if (!user) {
-      throw new Error(`No user found with id: ${authChallenger.id}`);
-    }
-
-    const voterRegistrationRepository = new VoterRegistrationRepository(
-      createSupabaseClient,
-      dataEncryptor,
-    );
-    await voterRegistrationRepository.awardUserBadge(user.uid, user.badges)
-
-    const newUser = await userRepository.getUserById(user.uid);
-    if (!newUser) {
-      throw new Error(`No newUser found with id: ${user.uid}`);
-    }
-
-    const newUserActionBadge = [{action : "voterRegistration"}]
-    expect(newUser.badges.length === 1)
-    expect(newUser.badges === newUserActionBadge)
-
-
-    
-  })
-
-  it("does not award user a badge when they have more than 8 badges or have voterRegistration badge", async () => {
-    const user = await userRepository.getUserById(authChallenger.id);
-    if (!user) {
-      throw new Error(`No user found with id: ${authChallenger.id}`);
-    }
-
-    const voterRegistrationRepository = new VoterRegistrationRepository(
-      createSupabaseClient,
-      dataEncryptor,
-    );
-
-    let badgesArray: Badge[] = [{action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}]
-
-    await voterRegistrationRepository.awardUserBadge(user.uid, badgesArray)
-    let newUser = await userRepository.getUserById(user.uid);
-    if (!newUser) {
-      throw new Error(`No newUser found with id: ${user.uid}`);
-    }
-    expect(newUser.badges.length === 0)
-
-    badgesArray = [{action: Actions.VoterRegistration}]
-    await voterRegistrationRepository.awardUserBadge(user.uid, badgesArray)
-    newUser = await userRepository.getUserById(user.uid);
-    if (!newUser) {
-      throw new Error(`No newUser found with id: ${user.uid}`);
-    }
-    expect(newUser.badges.length === 0)
   })
 });

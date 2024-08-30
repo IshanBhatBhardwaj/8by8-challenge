@@ -17,11 +17,11 @@ export interface RegisterBody {
   id_number: string;
 }
 
+// type x = RegisterBody & { user_id: string; }
+
 export interface VoterRepository {
   insertVoterRegistrationInfo(
     id: string,
     encryptedRegisterBody: RegisterBody,
   ): Promise<void>;
-  updateUserCompletedTask(id: string): Promise<void>;
-  awardUserBadge(id: string, badges: Badge[]): Promise<void>;
 }
