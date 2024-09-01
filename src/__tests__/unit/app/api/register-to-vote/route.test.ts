@@ -1,4 +1,4 @@
-import {POST} from '@/app/api/register-to-vote/route'
+import { POST } from '@/app/api/register-to-vote/route';
 import { NextRequest } from 'next/server';
 import { serverContainer } from '@/services/server/container';
 import { saveActualImplementation } from '@/utils/test/save-actual-implementation';
@@ -7,17 +7,15 @@ import { SERVER_SERVICE_KEYS } from '@/services/server/keys';
 import type { Auth } from '@/services/server/auth/auth';
 import type { User } from '@/model/types/user';
 import type { ICookies } from '@/services/server/cookies/i-cookies';
-import type {UserRepository} from '@/services/server/user-repository/user-repository'
+import type { UserRepository } from '@/services/server/user-repository/user-repository';
 import type { VoterRepository } from '@/services/server/voter-registration-repository/voter-registration';
 import { DateTime } from 'luxon';
 import { UserType } from '@/model/enums/user-type';
 
 describe('POST', () => {
-
   const getActualService = saveActualImplementation(serverContainer, 'get');
 
   it('takes voter registration information, calls /registervote api, updates completed task, awards badge, and updates user', async () => {
-
     const user: User = {
       uid: '0',
       email: 'user@example.com',
@@ -36,33 +34,35 @@ describe('POST', () => {
       inviteCode: 'test-invite-code',
     };
 
-    const insertVoterRegistrationInfo = jest.fn()
-    const updateRegisterToVoteAction = jest.fn()
-    const awardVoterRegistrationActionBadge = jest.fn()
+    const insertVoterRegistrationInfo = jest.fn();
+    const updateRegisterToVoteAction = jest.fn();
+    const awardVoterRegistrationActionBadge = jest.fn();
 
     const containerSpy = jest
       .spyOn(serverContainer, 'get')
       .mockImplementation(key => {
         if (key.name === SERVER_SERVICE_KEYS.Auth.name) {
           return Builder<Auth>()
-            .loadSessionUser((() => Promise.resolve(user)))
+            .loadSessionUser(() => Promise.resolve(user))
             .build();
         } else if (key.name === SERVER_SERVICE_KEYS.UserRepository.name) {
           return Builder<UserRepository>()
             .getUserById(() => Promise.resolve(user))
-            .awardVoterRegistrationActionBadge(awardVoterRegistrationActionBadge)
+            .awardVoterRegistrationActionBadge(
+              awardVoterRegistrationActionBadge,
+            )
             .updateRegisterToVoteAction(updateRegisterToVoteAction)
             .build();
         } else if (key.name === SERVER_SERVICE_KEYS.VoterRepository.name) {
           return Builder<VoterRepository>()
-          .insertVoterRegistrationInfo(insertVoterRegistrationInfo)
-          .build();
+            .insertVoterRegistrationInfo(insertVoterRegistrationInfo)
+            .build();
         }
         return getActualService(key);
       });
 
     const registerBody = {
-      user_id: null,
+      user_id: '0',
       state: 'FL',
       city: 'Davie',
       street: '2161 SW 152 Ter',

@@ -22,11 +22,9 @@ export function readPrivateEnvironmentVariables() {
       .parse(process.env.SUPABASE_SERVICE_ROLE_KEY),
     CRYPTO_KEY: z
       .string({
-        required_error:
-          'Could not load environment variable CRYPTO_KEY',
+        required_error: 'Could not load environment variable CRYPTO_KEY',
       })
-      .transform( async (key:string) : Promise<CryptoKey> => {
-
+      .transform(async (key: string): Promise<CryptoKey> => {
         const rawKey = new Uint8Array(
           atob(key)
             .split('')
@@ -41,11 +39,11 @@ export function readPrivateEnvironmentVariables() {
             true,
             ['encrypt', 'decrypt'],
           );
-          return cryptoKey
-        } catch(e) {
-          throw new Error("Failed to import CryptoKey")
+          return cryptoKey;
+        } catch (e) {
+          throw new Error('Failed to import CryptoKey');
         }
       })
-      .parseAsync(process.env.CRYPTO_KEY)
+      .parseAsync(process.env.CRYPTO_KEY),
   };
 }

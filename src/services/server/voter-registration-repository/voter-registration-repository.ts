@@ -39,15 +39,16 @@ export const VoterRegistrationRepository = inject(
             const typedKey = key as keyof typeof encryptedObject;
             const value = encryptedObject[typedKey];
             if (value) {
-              if (typedKey === "user_id") {
-                encryptedObject["user_id"] = id;
-                continue
+              if (typedKey === 'user_id') {
+                encryptedObject['user_id'] = id;
+                continue;
               }
               const encryptedValue = await dataEncryptor.encrypt(
                 value,
                 cryptoKey,
               );
-              const base64EncodedValue = Buffer.from(encryptedValue).toString('base64');  
+              const base64EncodedValue =
+                Buffer.from(encryptedValue).toString('base64');
               encryptedObject[typedKey] = base64EncodedValue;
             }
           }
@@ -55,8 +56,8 @@ export const VoterRegistrationRepository = inject(
         return encryptedObject;
       };
 
-      const encryptedRegisterBody = await encryptRegisterBody(RegisterBody);      
-      const supabase =  this.createSupabaseClient();
+      const encryptedRegisterBody = await encryptRegisterBody(RegisterBody);
+      const supabase = this.createSupabaseClient();
       const { error } = await supabase
         .from('registration_information')
         .insert(encryptedRegisterBody)

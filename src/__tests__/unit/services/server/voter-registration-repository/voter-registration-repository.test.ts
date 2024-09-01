@@ -18,10 +18,10 @@ describe('VoterRegistrationRepository class', () => {
   let userRepository: InstanceType<typeof SupabaseUserRepository>;
   let createSupabaseClient: CreateSupabaseClient;
   let dataEncryptor = new WebCryptoSubtleEncryptor();
-  let authChallenger: any
-  let supabase: SupabaseClient<any, "public", any>
+  let authChallenger: any;
+  let supabase: SupabaseClient<any, 'public', any>;
 
-  beforeEach( async () => {
+  beforeEach(async () => {
     createSupabaseClient = () => {
       return createBrowserClient(
         PUBLIC_ENVIRONMENT_VARIABLES.NEXT_PUBLIC_SUPABASE_URL,
@@ -58,73 +58,84 @@ describe('VoterRegistrationRepository class', () => {
     return resetAuthAndDatabase();
   });
 
-  it("inserts encrypted register body onto supabase", async () => {
+  it('inserts encrypted register body onto supabase', async () => {
     const user = await userRepository.getUserById(authChallenger.id);
     if (!user) {
       throw new Error(`No user found with id: ${authChallenger.id}`);
-      }
+    }
 
     const registerBody = {
-        user_id: user.uid,
-        us_state: 'FL',
-        city: 'Davie',
-        street: '2161 SW 152 Ter',
-        name_first: 'John',
-        name_last: 'Doe',
-        dob: '09/20/2003',
-        zip: '33027',
-        email: 'test@me.come',
-        citizen: 'yes',
-        eighteen_plus: 'yes',
-        party: 'Democrat',
-        id_number: '123',
+      user_id: user.uid,
+      us_state: 'FL',
+      city: 'Davie',
+      street: '2161 SW 152 Ter',
+      name_first: 'John',
+      name_last: 'Doe',
+      dob: '09/20/2003',
+      zip: '33027',
+      email: 'test@me.come',
+      citizen: 'yes',
+      eighteen_plus: 'yes',
+      party: 'Democrat',
+      id_number: '123',
     };
 
-    const voterRegistrationRepository = new VoterRegistrationRepository(createSupabaseClient, dataEncryptor)
-    await voterRegistrationRepository.insertVoterRegistrationInfo(user.uid, registerBody)
+    const voterRegistrationRepository = new VoterRegistrationRepository(
+      createSupabaseClient,
+      dataEncryptor,
+    );
+    await voterRegistrationRepository.insertVoterRegistrationInfo(
+      user.uid,
+      registerBody,
+    );
 
     const newUser = await userRepository.getUserById(user.uid);
     if (!newUser) {
-        throw new Error(`No newUser found with id: ${user.uid}`);
+      throw new Error(`No newUser found with id: ${user.uid}`);
     }
 
     const { data: dbUser, error } = await supabase
-    .from('users')
-    .select(
-      `*,
+      .from('users')
+      .select(
+        `*,
       registration_information (user_id, us_state, city, street, name_first, name_last, dob, zip, email, citizen, eighteen_plus, party, id_number)`,
-    )
-    .eq('id', newUser.uid)
-    .limit(1)
-    .maybeSingle();
+      )
+      .eq('id', newUser.uid)
+      .limit(1)
+      .maybeSingle();
 
     if (error) {
-        throw new ServerError(error.message, 500);
-      }
-    if (!dbUser) throw new Error("no user found");
+      throw new ServerError(error.message, 500);
+    }
+    if (!dbUser) throw new Error('no user found');
 
     const decryptInformation = async (encryptedObject: typeof registerBody) => {
-        const cryptoKey = await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY;
-        
-        const decryptedObject = { ...encryptedObject };
-        for (const key in encryptedObject) {
-          if (Object.prototype.hasOwnProperty.call(encryptedObject, key)) {
-            const typedKey = key as keyof typeof encryptedObject;
-            const encryptedValueAsString = Buffer.from(encryptedObject[typedKey], 'base64').toString("utf-8")
-            if (typedKey === "user_id") {
-              decryptedObject["user_id"] = encryptedObject["user_id"]
-              continue
-            }
-            const decryptedValue = await dataEncryptor.decrypt(
-              encryptedValueAsString,
-              cryptoKey,
-            );
-            decryptedObject[typedKey] = decryptedValue;
+      const cryptoKey = await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY;
+
+      const decryptedObject = { ...encryptedObject };
+      for (const key in encryptedObject) {
+        if (Object.prototype.hasOwnProperty.call(encryptedObject, key)) {
+          const typedKey = key as keyof typeof encryptedObject;
+          const encryptedValueAsString = Buffer.from(
+            encryptedObject[typedKey],
+            'base64',
+          ).toString('utf-8');
+          if (typedKey === 'user_id') {
+            decryptedObject['user_id'] = encryptedObject['user_id'];
+            continue;
           }
+          const decryptedValue = await dataEncryptor.decrypt(
+            encryptedValueAsString,
+            cryptoKey,
+          );
+          decryptedObject[typedKey] = decryptedValue;
         }
-        return decryptedObject;
-    }
-    const decryptedObject = await decryptInformation(dbUser.registration_information[0])
-    expect(decryptedObject).toEqual(registerBody)
-  })
+      }
+      return decryptedObject;
+    };
+    const decryptedObject = await decryptInformation(
+      dbUser.registration_information[0],
+    );
+    expect(decryptedObject).toEqual(registerBody);
+  });
 });

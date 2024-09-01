@@ -14,7 +14,6 @@ import type { CreateSupabaseClient } from '@/services/server/create-supabase-cli
 import type { IUserRecordParser } from '@/services/server/user-record-parser/i-user-record-parser';
 import type { Badge } from '@/model/types/badge';
 
-
 describe('SupabaseUserRepository', () => {
   let userRepository: InstanceType<typeof SupabaseUserRepository>;
   let createSupabaseClient: CreateSupabaseClient;
@@ -338,16 +337,16 @@ describe('SupabaseUserRepository', () => {
     }
     expect(user.completedActions.registerToVote).toBe(false);
 
-    await userRepository.updateRegisterToVoteAction(user.uid)
+    await userRepository.updateRegisterToVoteAction(user.uid);
 
     const newUser = await userRepository.getUserById(user.uid);
     if (!newUser) {
-      throw new Error(`No newUser found with id: ${user.uid}`)
+      throw new Error(`No newUser found with id: ${user.uid}`);
     }
     expect(newUser.completedActions.registerToVote).toBe(true);
   });
 
-  it("awards a user a badge", async () => {
+  it('awards a user a badge', async () => {
     const supabase = createSupabaseClient();
 
     // Create a challenger and award them an action badge.
@@ -376,19 +375,22 @@ describe('SupabaseUserRepository', () => {
       throw new Error(`No user found with id: ${authChallenger.id}`);
     }
 
-    await userRepository.awardVoterRegistrationActionBadge(user.uid, user.badges)
+    await userRepository.awardVoterRegistrationActionBadge(
+      user.uid,
+      user.badges,
+    );
 
     const newUser = await userRepository.getUserById(user.uid);
     if (!newUser) {
       throw new Error(`No newUser found with id: ${user.uid}`);
     }
 
-    const newUserActionBadge = [{action : "voterRegistration"}]
-    expect(newUser.badges.length === 1)
-    expect(newUser.badges === newUserActionBadge)
-  })
+    const newUserActionBadge = [{ action: 'voterRegistration' }];
+    expect(newUser.badges.length === 1);
+    expect(newUser.badges === newUserActionBadge);
+  });
 
-  it("does not award the user a badge when they have more than 8 badges or already have the voterRegistration badge", async () => {
+  it('does not award the user a badge when they have more than 8 badges or already have the voterRegistration badge', async () => {
     const supabase = createSupabaseClient();
 
     // Create a challenger and award them an action badge.
@@ -416,21 +418,36 @@ describe('SupabaseUserRepository', () => {
       throw new Error(`No user found with id: ${authChallenger.id}`);
     }
 
-    let badgesArray: Badge[] = [{action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}, {action: Actions.SharedChallenge}]
+    let badgesArray: Badge[] = [
+      { action: Actions.SharedChallenge },
+      { action: Actions.SharedChallenge },
+      { action: Actions.SharedChallenge },
+      { action: Actions.SharedChallenge },
+      { action: Actions.SharedChallenge },
+      { action: Actions.SharedChallenge },
+      { action: Actions.SharedChallenge },
+      { action: Actions.SharedChallenge },
+    ];
 
-    await userRepository.awardVoterRegistrationActionBadge(user.uid, badgesArray)
+    await userRepository.awardVoterRegistrationActionBadge(
+      user.uid,
+      badgesArray,
+    );
     let newUser = await userRepository.getUserById(user.uid);
     if (!newUser) {
       throw new Error(`No newUser found with id: ${user.uid}`);
     }
-    expect(newUser.badges.length === 0)
+    expect(newUser.badges.length === 0);
 
-    badgesArray = [{action: Actions.VoterRegistration}]
-    await userRepository.awardVoterRegistrationActionBadge(user.uid, badgesArray)
+    badgesArray = [{ action: Actions.VoterRegistration }];
+    await userRepository.awardVoterRegistrationActionBadge(
+      user.uid,
+      badgesArray,
+    );
     newUser = await userRepository.getUserById(user.uid);
     if (!newUser) {
       throw new Error(`No newUser found with id: ${user.uid}`);
     }
-    expect(newUser.badges.length === 0)
-})
+    expect(newUser.badges.length === 0);
+  });
 });

@@ -9,7 +9,6 @@ import { ActionBadge } from '@/model/types/action-badge';
 import { Actions } from '@/model/enums/actions';
 import type { Badge } from '@/model/types/badge';
 
-
 /**
  * An implementation of {@link UserRepository} that interacts with
  * a [Supabase](https://supabase.com/) database and parses rows returned from
@@ -32,7 +31,7 @@ export const SupabaseUserRepository = inject(
           completed_actions (election_reminders, register_to_vote, shared_challenge),
           badges (action, player_name, player_avatar),
           invited_by (challenger_invite_code, challenger_name, challenger_avatar),
-          contributed_to (challenger_name, challenger_avatar)`
+          contributed_to (challenger_name, challenger_avatar)`,
         )
         .eq('id', userId)
         .limit(1)
@@ -72,36 +71,39 @@ export const SupabaseUserRepository = inject(
      * @awardUserBadge
      * @param id - User's id to get user
      */
-    async awardVoterRegistrationActionBadge(id: string, badges: Badge[]): Promise<void> {
-          const supabase = this.createSupabaseClient();
-          const actionBadges = badges.filter(obj => {
-            return (obj as ActionBadge).action !== undefined;
-          });
-    
-          let found = false;
-          actionBadges.forEach(item => {
-            if ((item as ActionBadge).action === 'voterRegistration') {
-              found = true;
-            }
-          });
-    
-          if (badges.length >= 8 || found) {
-            return;
-          }
-    
-          const challengerActionBadge = {
-            action: Actions.VoterRegistration,
-            challenger_id: id,
-          };
-    
-          const { error: challengerActionBadgeInsertionError } = await supabase
-            .from('badges')
-            .insert(challengerActionBadge)
-            .eq('user_id', id);
-    
-          if (challengerActionBadgeInsertionError) {
-            throw new Error(challengerActionBadgeInsertionError.message);
-          }
+    async awardVoterRegistrationActionBadge(
+      id: string,
+      badges: Badge[],
+    ): Promise<void> {
+      const supabase = this.createSupabaseClient();
+      const actionBadges = badges.filter(obj => {
+        return (obj as ActionBadge).action !== undefined;
+      });
+
+      let found = false;
+      actionBadges.forEach(item => {
+        if ((item as ActionBadge).action === 'voterRegistration') {
+          found = true;
+        }
+      });
+
+      if (badges.length >= 8 || found) {
+        return;
+      }
+
+      const challengerActionBadge = {
+        action: Actions.VoterRegistration,
+        challenger_id: id,
+      };
+
+      const { error: challengerActionBadgeInsertionError } = await supabase
+        .from('badges')
+        .insert(challengerActionBadge)
+        .eq('user_id', id);
+
+      if (challengerActionBadgeInsertionError) {
+        throw new Error(challengerActionBadgeInsertionError.message);
+      }
     }
   },
   [
