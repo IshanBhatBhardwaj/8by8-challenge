@@ -1,7 +1,5 @@
 import { VoterRegistrationRepository } from '@/services/server/voter-registration-repository/voter-registration-repository';
-import { DateTime } from 'luxon';
 import { UserType } from '@/model/enums/user-type';
-import type { User } from '@/model/types/user';
 import type { CreateSupabaseClient } from '@/services/server/create-supabase-client/create-supabase-client';
 import { createBrowserClient } from '@supabase/ssr';
 import { PRIVATE_ENVIRONMENT_VARIABLES } from '@/constants/private-environment-variables';
@@ -13,9 +11,8 @@ import { resetAuthAndDatabase } from '@/utils/test/reset-auth-and-database';
 import { createId } from '@paralleldrive/cuid2';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ServerError } from '@/errors/server-error';
-import { Badge } from '@/model/types/badge';
-import { Actions } from '@/model/enums/actions';
-
+import { serverContainer } from '@/services/server/container';
+import { SERVER_SERVICE_KEYS } from '@/services/server/keys';
 
 describe('VoterRegistrationRepository class', () => {
   let userRepository: InstanceType<typeof SupabaseUserRepository>;
@@ -84,7 +81,6 @@ describe('VoterRegistrationRepository class', () => {
     };
 
     const voterRegistrationRepository = new VoterRegistrationRepository(createSupabaseClient, dataEncryptor)
-    //this next line throws an error near line 73 in the voterRegistrationRepository class
     await voterRegistrationRepository.insertVoterRegistrationInfo(user.uid, registerBody)
 
     const newUser = await userRepository.getUserById(user.uid);

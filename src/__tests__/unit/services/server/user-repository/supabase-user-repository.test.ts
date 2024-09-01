@@ -388,7 +388,7 @@ describe('SupabaseUserRepository', () => {
     expect(newUser.badges === newUserActionBadge)
   })
 
-  it("does not award user a badge when they have more than 8 badges or have voterRegistration badge", async () => {
+  it("does not award the user a badge when they have more than 8 badges or already have the voterRegistration badge", async () => {
     const supabase = createSupabaseClient();
 
     // Create a challenger and award them an action badge.

@@ -43,7 +43,7 @@ export function readPrivateEnvironmentVariables() {
           );
           return cryptoKey
         } catch(e) {
-          throw new Error("Failed to import CryptoKey. Make Sure to run script first")
+          throw new Error("Failed to import CryptoKey")
         }
       })
       .parseAsync(process.env.CRYPTO_KEY)

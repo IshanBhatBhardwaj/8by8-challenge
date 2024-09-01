@@ -32,7 +32,7 @@ export const SupabaseUserRepository = inject(
           completed_actions (election_reminders, register_to_vote, shared_challenge),
           badges (action, player_name, player_avatar),
           invited_by (challenger_invite_code, challenger_name, challenger_avatar),
-          contributed_to (challenger_name, challenger_avatar)`,
+          contributed_to (challenger_name, challenger_avatar)`
         )
         .eq('id', userId)
         .limit(1)
@@ -52,9 +52,8 @@ export const SupabaseUserRepository = inject(
       }
     }
     /**
-     * @updateUserCompletedTask
+     * @updateRegisterToVoteAction
      * @param id - User's id to get user
-     * move these last two methods to user repo
      */
     async updateRegisterToVoteAction(userId: string): Promise<void> {
       const supabase = this.createSupabaseClient();

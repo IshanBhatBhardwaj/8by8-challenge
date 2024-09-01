@@ -87,5 +87,6 @@ describe('POST', () => {
 
     const response = await POST(request);
     expect(response.status).toBe(200);
+    containerSpy.mockRestore();
   }, 100000);
 });

@@ -2,7 +2,6 @@ import 'server-only';
 import { NextResponse, NextRequest } from 'next/server';
 import { ServerError } from '@/errors/server-error';
 import { registerBodySchema, supabaseRegisterBodySchema } from './register-body-schema';
-import { VoterRegistrationRepository } from '@/services/server/voter-registration-repository/voter-registration-repository';
 import { serverContainer } from '@/services/server/container';
 import { SERVER_SERVICE_KEYS } from '@/services/server/keys';
 
@@ -20,7 +19,7 @@ export async function POST(response: NextRequest) {
 
   try {
     const data = await response.json();
-
+    //creates dataForSupabase using underscores instead of camel case
     const dataForSupabase = {...data}
     dataForSupabase.user_id = user.uid
     dataForSupabase.us_state = dataForSupabase.state
@@ -33,7 +32,6 @@ export async function POST(response: NextRequest) {
     const registerBody = registerBodySchema.parse(data);
     const supabaseRegisterBody = supabaseRegisterBodySchema.parse(dataForSupabase)
 
-    // perhaps make this a service as well
     const fetchResponse = await fetch('https://usvotes-6vsnwycl4q-uw.a.run.app/registertovote', {
       method: 'POST',
       headers: {

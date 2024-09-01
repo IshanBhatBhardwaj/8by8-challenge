@@ -6,7 +6,6 @@ import { inject } from 'undecorated-di';
 import { Encryptor } from '../encryptor/encryptor';
 import type { CreateSupabaseClient } from '../create-supabase-client/create-supabase-client';
 import { PRIVATE_ENVIRONMENT_VARIABLES } from '@/constants/private-environment-variables';
-import { serverContainer } from '../container';
 
 export const VoterRegistrationRepository = inject(
   /**
@@ -56,16 +55,12 @@ export const VoterRegistrationRepository = inject(
         return encryptedObject;
       };
 
-      const encryptedRegisterBody = await encryptRegisterBody(RegisterBody);
-      encryptRegisterBody.user_id = id
+      const encryptedRegisterBody = await encryptRegisterBody(RegisterBody);      
       const supabase =  this.createSupabaseClient();
-
-      //This always throws an error
       const { error } = await supabase
         .from('registration_information')
         .insert(encryptedRegisterBody)
         .eq('user_id', id);
-      //error is caught here
       if (error) {
         throw new ServerError(error.message, 500);
       }
