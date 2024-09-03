@@ -48,7 +48,3 @@ next-env.d.ts
 /venv
 __pycache__
 .pytest_cache
-
-
-
-
