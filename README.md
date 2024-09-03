@@ -23,6 +23,7 @@ Run the script 'npm run create-symlink-supabase-to-src'. This will create a syml
 Note, if you are a windows user, you may have to run the command prompt as an administrator to run the script.
 =======
 ##  Selenium Tests 
+=======
 ## Selenium Tests
 
 ### Prerequisites
