@@ -1,18 +1,16 @@
 import { VoterRegistrationRepository } from '@/services/server/voter-registration-repository/voter-registration-repository';
-import { UserType } from '@/model/enums/user-type';
 import type { CreateSupabaseClient } from '@/services/server/create-supabase-client/create-supabase-client';
-import { createBrowserClient } from '@supabase/ssr';
 import { PRIVATE_ENVIRONMENT_VARIABLES } from '@/constants/private-environment-variables';
-import { PUBLIC_ENVIRONMENT_VARIABLES } from '@/constants/public-environment-variables';
 import { WebCryptoSubtleEncryptor } from '@/services/server/encryptor/web-crypto-subtle-encryptor';
 import { SupabaseUserRepository } from '@/services/server/user-repository/supabase-user-repository';
-import { UserRecordParser } from '@/services/server/user-record-parser/user-record-parser';
 import { resetAuthAndDatabase } from '@/utils/test/reset-auth-and-database';
-import { createId } from '@paralleldrive/cuid2';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { ServerError } from '@/errors/server-error';
-import { serverContainer } from '@/services/server/container';
-import { SERVER_SERVICE_KEYS } from '@/services/server/keys';
+import {
+  createSupabseClientFunction,
+  createUserRepository,
+  createUser,
+} from '@/utils/test/create-user';
 
 describe('VoterRegistrationRepository class', () => {
   let userRepository: InstanceType<typeof SupabaseUserRepository>;
@@ -22,36 +20,10 @@ describe('VoterRegistrationRepository class', () => {
   let supabase: SupabaseClient<any, 'public', any>;
 
   beforeEach(async () => {
-    createSupabaseClient = () => {
-      return createBrowserClient(
-        PUBLIC_ENVIRONMENT_VARIABLES.NEXT_PUBLIC_SUPABASE_URL,
-        PRIVATE_ENVIRONMENT_VARIABLES.SUPABASE_SERVICE_ROLE_KEY,
-      );
-    };
-
-    userRepository = new SupabaseUserRepository(
-      createSupabaseClient,
-      new UserRecordParser(),
-    );
-
+    createSupabaseClient = createSupabseClientFunction();
+    userRepository = createUserRepository(createSupabaseClient);
     supabase = createSupabaseClient();
-    const challengerMetadata = {
-      name: 'Challenger',
-      avatar: '0',
-      type: UserType.Challenger,
-      invite_code: createId(),
-    };
-    const { data: challengerData, error: challengerInsertionError } =
-      await supabase.auth.admin.createUser({
-        email: 'jondoe@me.com',
-        email_confirm: true,
-        user_metadata: challengerMetadata,
-      });
-
-    if (challengerInsertionError) {
-      throw new Error(challengerInsertionError.message);
-    }
-    authChallenger = challengerData.user!;
+    authChallenger = await createUser(supabase);
   });
 
   afterEach(() => {
@@ -133,6 +105,7 @@ describe('VoterRegistrationRepository class', () => {
       }
       return decryptedObject;
     };
+
     const decryptedObject = await decryptInformation(
       dbUser.registration_information[0],
     );

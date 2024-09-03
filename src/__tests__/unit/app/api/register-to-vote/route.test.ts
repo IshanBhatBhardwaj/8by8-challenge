@@ -6,7 +6,6 @@ import { Builder } from 'builder-pattern';
 import { SERVER_SERVICE_KEYS } from '@/services/server/keys';
 import type { Auth } from '@/services/server/auth/auth';
 import type { User } from '@/model/types/user';
-import type { ICookies } from '@/services/server/cookies/i-cookies';
 import type { UserRepository } from '@/services/server/user-repository/user-repository';
 import type { VoterRepository } from '@/services/server/voter-registration-repository/voter-registration';
 import { DateTime } from 'luxon';
@@ -88,5 +87,5 @@ describe('POST', () => {
     const response = await POST(request);
     expect(response.status).toBe(200);
     containerSpy.mockRestore();
-  }, 100000);
+  }, 100_000);
 });

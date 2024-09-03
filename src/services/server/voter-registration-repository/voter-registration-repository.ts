@@ -58,6 +58,7 @@ export const VoterRegistrationRepository = inject(
 
       const encryptedRegisterBody = await encryptRegisterBody(RegisterBody);
       const supabase = this.createSupabaseClient();
+
       const { error } = await supabase
         .from('registration_information')
         .insert(encryptedRegisterBody)

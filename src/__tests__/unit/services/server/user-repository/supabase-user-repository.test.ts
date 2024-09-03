@@ -1,7 +1,4 @@
 import { SupabaseUserRepository } from '@/services/server/user-repository/supabase-user-repository';
-import { createBrowserClient } from '@supabase/ssr';
-import { PUBLIC_ENVIRONMENT_VARIABLES } from '@/constants/public-environment-variables';
-import { PRIVATE_ENVIRONMENT_VARIABLES } from '@/constants/private-environment-variables';
 import { UserRecordParser } from '@/services/server/user-record-parser/user-record-parser';
 import { v4 as uuid } from 'uuid';
 import { resetAuthAndDatabase } from '@/utils/test/reset-auth-and-database';
@@ -13,23 +10,19 @@ import { AuthError } from '@supabase/supabase-js';
 import type { CreateSupabaseClient } from '@/services/server/create-supabase-client/create-supabase-client';
 import type { IUserRecordParser } from '@/services/server/user-record-parser/i-user-record-parser';
 import type { Badge } from '@/model/types/badge';
+import {
+  createSupabseClientFunction,
+  createUserRepository,
+  createUser,
+} from '@/utils/test/create-user';
 
 describe('SupabaseUserRepository', () => {
   let userRepository: InstanceType<typeof SupabaseUserRepository>;
   let createSupabaseClient: CreateSupabaseClient;
 
   beforeEach(() => {
-    createSupabaseClient = () => {
-      return createBrowserClient(
-        PUBLIC_ENVIRONMENT_VARIABLES.NEXT_PUBLIC_SUPABASE_URL,
-        PRIVATE_ENVIRONMENT_VARIABLES.SUPABASE_SERVICE_ROLE_KEY,
-      );
-    };
-
-    userRepository = new SupabaseUserRepository(
-      createSupabaseClient,
-      new UserRecordParser(),
-    );
+    createSupabaseClient = createSupabseClientFunction();
+    userRepository = createUserRepository(createSupabaseClient);
   });
 
   afterEach(() => {
@@ -309,27 +302,7 @@ describe('SupabaseUserRepository', () => {
 
   it('updates users register to vote task', async () => {
     const supabase = createSupabaseClient();
-
-    // Create a challenger and award them an action badge.
-    const challengerMetadata = {
-      name: 'Challenger',
-      avatar: '0',
-      type: UserType.Challenger,
-      invite_code: createId(),
-    };
-
-    const { data: challengerData, error: challengerInsertionError } =
-      await supabase.auth.admin.createUser({
-        email: 'challenger@example.com',
-        email_confirm: true,
-        user_metadata: challengerMetadata,
-      });
-
-    if (challengerInsertionError) {
-      throw new Error(challengerInsertionError.message);
-    }
-
-    const authChallenger = challengerData.user!;
+    const authChallenger = await createUser(supabase);
 
     const user = await userRepository.getUserById(authChallenger.id);
     if (!user) {
@@ -348,27 +321,7 @@ describe('SupabaseUserRepository', () => {
 
   it('awards a user a badge', async () => {
     const supabase = createSupabaseClient();
-
-    // Create a challenger and award them an action badge.
-    const challengerMetadata = {
-      name: 'Challenger',
-      avatar: '0',
-      type: UserType.Challenger,
-      invite_code: createId(),
-    };
-
-    const { data: challengerData, error: challengerInsertionError } =
-      await supabase.auth.admin.createUser({
-        email: 'challenger@example.com',
-        email_confirm: true,
-        user_metadata: challengerMetadata,
-      });
-
-    if (challengerInsertionError) {
-      throw new Error(challengerInsertionError.message);
-    }
-
-    const authChallenger = challengerData.user!;
+    const authChallenger = await createUser(supabase);
 
     const user = await userRepository.getUserById(authChallenger.id);
     if (!user) {
@@ -392,27 +345,8 @@ describe('SupabaseUserRepository', () => {
 
   it('does not award the user a badge when they have more than 8 badges or already have the voterRegistration badge', async () => {
     const supabase = createSupabaseClient();
+    const authChallenger = await createUser(supabase);
 
-    // Create a challenger and award them an action badge.
-    const challengerMetadata = {
-      name: 'Challenger',
-      avatar: '0',
-      type: UserType.Challenger,
-      invite_code: createId(),
-    };
-
-    const { data: challengerData, error: challengerInsertionError } =
-      await supabase.auth.admin.createUser({
-        email: 'challenger@example.com',
-        email_confirm: true,
-        user_metadata: challengerMetadata,
-      });
-
-    if (challengerInsertionError) {
-      throw new Error(challengerInsertionError.message);
-    }
-
-    const authChallenger = challengerData.user!;
     const user = await userRepository.getUserById(authChallenger.id);
     if (!user) {
       throw new Error(`No user found with id: ${authChallenger.id}`);

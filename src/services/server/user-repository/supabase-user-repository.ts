@@ -56,6 +56,7 @@ export const SupabaseUserRepository = inject(
      */
     async updateRegisterToVoteAction(userId: string): Promise<void> {
       const supabase = this.createSupabaseClient();
+
       const { error: challengerUpdateError } = await supabase
         .from('completed_actions')
         .update({
@@ -76,18 +77,17 @@ export const SupabaseUserRepository = inject(
       badges: Badge[],
     ): Promise<void> {
       const supabase = this.createSupabaseClient();
+
+      let found = false;
       const actionBadges = badges.filter(obj => {
+        if ((obj as ActionBadge).action === 'voterRegistration') {
+          found = true;
+        }
         return (obj as ActionBadge).action !== undefined;
       });
 
-      let found = false;
-      actionBadges.forEach(item => {
-        if ((item as ActionBadge).action === 'voterRegistration') {
-          found = true;
-        }
-      });
-
       if (badges.length >= 8 || found) {
+        //should we be throwing an error here? throw new Error("can not award user a badge")
         return;
       }
 
