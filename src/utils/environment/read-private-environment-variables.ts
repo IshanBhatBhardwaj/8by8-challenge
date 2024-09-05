@@ -31,19 +31,16 @@ export function readPrivateEnvironmentVariables() {
             .map(char => char.charCodeAt(0)),
         );
 
-        try {
-          const cryptoKey = await crypto.subtle.importKey(
-            'raw',
-            rawKey,
-            { name: 'AES-GCM' },
-            true,
-            ['encrypt', 'decrypt'],
-          );
-          return cryptoKey;
-        } catch (e) {
-          throw new Error('Failed to import CryptoKey');
-        }
-      })
+        const cryptoKey = await crypto.subtle.importKey(
+          'raw',
+          rawKey,
+          { name: 'AES-GCM' },
+          true,
+          ['encrypt', 'decrypt'],
+        );
+        return cryptoKey;
+      } 
+      )
       .parseAsync(process.env.CRYPTO_KEY),
   };
 }

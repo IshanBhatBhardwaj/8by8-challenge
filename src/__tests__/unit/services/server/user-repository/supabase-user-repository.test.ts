@@ -384,4 +384,28 @@ describe('SupabaseUserRepository', () => {
     }
     expect(newUser.badges.length === 0);
   });
+
+  it("throws a challengerUpdateError for the updateRegisterToVoteAction method when there is an invalid user id", async () => {
+    const supabase = createSupabaseClient();
+    const authChallenger = await createUser(supabase);
+
+    const user = await userRepository.getUserById(authChallenger.id);
+    if (!user) {
+      throw new Error(`No user found with id: ${authChallenger.id}`);
+    }
+    expect(user.completedActions.registerToVote).toBe(false);
+    await expect(userRepository.updateRegisterToVoteAction("")).rejects.toThrow(new Error("invalid input syntax for type uuid: \"\""))
+  })
+  
+  it("throws a challengerUpdateError for the awardVoterRegistrationActionBadge method when there is an invalid user id", async () => {
+    const supabase = createSupabaseClient();
+    const authChallenger = await createUser(supabase);
+
+    const user = await userRepository.getUserById(authChallenger.id);
+    if (!user) {
+      throw new Error(`No user found with id: ${authChallenger.id}`);
+    }
+    expect(user.completedActions.registerToVote).toBe(false);
+    await expect(userRepository.awardVoterRegistrationActionBadge("", user.badges)).rejects.toThrow(new Error("invalid input syntax for type uuid: \"\""))
+  })
 });

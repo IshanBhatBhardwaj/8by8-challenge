@@ -111,4 +111,33 @@ describe('VoterRegistrationRepository class', () => {
     );
     expect(decryptedObject).toEqual(registerBody);
   });
+
+  it("throws server error when id is not valid", async () => {
+    const user = await userRepository.getUserById(authChallenger.id);
+    if (!user) {
+      throw new Error(`No user found with id: ${authChallenger.id}`);
+    }
+
+    const registerBody = {
+      user_id: user.uid,
+      us_state: 'FL',
+      city: 'Davie',
+      street: '2161 SW 152 Ter',
+      name_first: 'John',
+      name_last: 'Doe',
+      dob: '09/20/2003',
+      zip: '33027',
+      email: 'test@me.come',
+      citizen: 'yes',
+      eighteen_plus: 'yes',
+      party: 'Democrat',
+      id_number: '123',
+    };
+
+    const voterRegistrationRepository = new VoterRegistrationRepository(
+      createSupabaseClient,
+      dataEncryptor,
+    );
+    await expect(voterRegistrationRepository.insertVoterRegistrationInfo("", registerBody)).rejects.toThrow(new ServerError("invalid input syntax for type uuid: \"\"", 500))
+  })
 });

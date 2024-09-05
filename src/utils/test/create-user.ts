@@ -35,6 +35,7 @@ export async function createUser(supabase: SupabaseClient<any, 'public', any>) {
     type: UserType.Challenger,
     invite_code: createId(),
   };
+
   const { data: challengerData, error: challengerInsertionError } =
     await supabase.auth.admin.createUser({
       email: 'jondoe@me.com',

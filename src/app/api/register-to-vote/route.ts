@@ -36,7 +36,6 @@ export async function POST(response: NextRequest) {
     const registerBody = registerBodySchema.parse(data);
     const supabaseRegisterBody =
       supabaseRegisterBodySchema.parse(dataForSupabase);
-
     const fetchResponse = await fetch(
       'https://usvotes-6vsnwycl4q-uw.a.run.app/registertovote',
       {
@@ -49,7 +48,7 @@ export async function POST(response: NextRequest) {
     );
 
     const registerToVoteAPI = await fetchResponse.json();
-    if (!registerToVoteAPI.ok) {
+    if (registerToVoteAPI.status !== "email sent") {
       return NextResponse.json(
         { error: registerToVoteAPI.error },
         { status: fetchResponse.status },
@@ -67,10 +66,8 @@ export async function POST(response: NextRequest) {
     return NextResponse.json(updatedUser, { status: 200 });
   } catch (e) {
     if (e instanceof ServerError) {
-      console.log('Server Error', e.message);
       return NextResponse.json({ error: e.message }, { status: e.statusCode });
     }
-    console.log('Bad data');
     return NextResponse.json({ error: 'bad data.' }, { status: 400 });
   }
 }
