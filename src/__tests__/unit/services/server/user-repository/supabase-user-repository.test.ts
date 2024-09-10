@@ -300,7 +300,7 @@ describe('SupabaseUserRepository', () => {
     );
   });
 
-  it('updates users register to vote task', async () => {
+  it('updates users register to vote task and awads user a badge', async () => {
     const supabase = createSupabaseClient();
     const authChallenger = await createUser(supabase);
 
@@ -309,38 +309,21 @@ describe('SupabaseUserRepository', () => {
       throw new Error(`No user found with id: ${authChallenger.id}`);
     }
     expect(user.completedActions.registerToVote).toBe(false);
+    expect(user.badges.length === 0);
 
-    await userRepository.updateRegisterToVoteAction(user.uid);
+    await userRepository.awardAndUpdateVoterRegistrationBadgeAndAction(user);
 
     const newUser = await userRepository.getUserById(user.uid);
     if (!newUser) {
       throw new Error(`No newUser found with id: ${user.uid}`);
     }
+
     expect(newUser.completedActions.registerToVote).toBe(true);
-  });
-
-  it('awards a user a badge', async () => {
-    const supabase = createSupabaseClient();
-    const authChallenger = await createUser(supabase);
-
-    const user = await userRepository.getUserById(authChallenger.id);
-    if (!user) {
-      throw new Error(`No user found with id: ${authChallenger.id}`);
-    }
-
-    await userRepository.awardVoterRegistrationActionBadge(
-      user.uid,
-      user.badges,
-    );
-
-    const newUser = await userRepository.getUserById(user.uid);
-    if (!newUser) {
-      throw new Error(`No newUser found with id: ${user.uid}`);
-    }
-
+    
     const newUserActionBadge = [{ action: 'voterRegistration' }];
     expect(newUser.badges.length === 1);
     expect(newUser.badges === newUserActionBadge);
+    
   });
 
   it('does not award the user a badge when they have more than 8 badges or already have the voterRegistration badge', async () => {
@@ -363,9 +346,8 @@ describe('SupabaseUserRepository', () => {
       { action: Actions.SharedChallenge },
     ];
 
-    await userRepository.awardVoterRegistrationActionBadge(
-      user.uid,
-      badgesArray,
+    await userRepository.awardAndUpdateVoterRegistrationBadgeAndAction(
+      user
     );
     let newUser = await userRepository.getUserById(user.uid);
     if (!newUser) {
@@ -374,10 +356,10 @@ describe('SupabaseUserRepository', () => {
     expect(newUser.badges.length === 0);
 
     badgesArray = [{ action: Actions.VoterRegistration }];
-    await userRepository.awardVoterRegistrationActionBadge(
-      user.uid,
-      badgesArray,
+    await userRepository.awardAndUpdateVoterRegistrationBadgeAndAction(
+      user
     );
+
     newUser = await userRepository.getUserById(user.uid);
     if (!newUser) {
       throw new Error(`No newUser found with id: ${user.uid}`);
@@ -385,7 +367,22 @@ describe('SupabaseUserRepository', () => {
     expect(newUser.badges.length === 0);
   });
 
-  it("throws a challengerUpdateError for the updateRegisterToVoteAction method when there is an invalid user id", async () => {
+  // it('throws a challengerUpdateError for the updateRegisterToVoteAction private method when there is an invalid user id', async () => {
+  //   const supabase = createSupabaseClient();
+
+  //   const authChallenger = await createUser(supabase);
+
+  //   const user = await userRepository.getUserById(authChallenger.id);
+  //   if (!user) {
+  //     throw new Error(`No user found with id: ${authChallenger.id}`);
+  //   }
+  //   expect(user.completedActions.registerToVote).toBe(false);
+  //   await expect(userRepository.updateRegisterToVoteAction('')).rejects.toThrow(
+  //     new Error('invalid input syntax for type uuid: ""'),
+  //   );
+  // });
+
+  it('throws a challengerUpdateError for the awardVoterRegistrationActionBadge private method when there is an invalid user id', async () => {
     const supabase = createSupabaseClient();
     const authChallenger = await createUser(supabase);
 
@@ -393,19 +390,9 @@ describe('SupabaseUserRepository', () => {
     if (!user) {
       throw new Error(`No user found with id: ${authChallenger.id}`);
     }
-    expect(user.completedActions.registerToVote).toBe(false);
-    await expect(userRepository.updateRegisterToVoteAction("")).rejects.toThrow(new Error("invalid input syntax for type uuid: \"\""))
-  })
-  
-  it("throws a challengerUpdateError for the awardVoterRegistrationActionBadge method when there is an invalid user id", async () => {
-    const supabase = createSupabaseClient();
-    const authChallenger = await createUser(supabase);
-
-    const user = await userRepository.getUserById(authChallenger.id);
-    if (!user) {
-      throw new Error(`No user found with id: ${authChallenger.id}`);
-    }
-    expect(user.completedActions.registerToVote).toBe(false);
-    await expect(userRepository.awardVoterRegistrationActionBadge("", user.badges)).rejects.toThrow(new Error("invalid input syntax for type uuid: \"\""))
-  })
+    user.uid = ""
+    await expect(
+      userRepository.awardAndUpdateVoterRegistrationBadgeAndAction(user),
+    ).rejects.toThrow(new Error("Bad Request"));
+  });
 });

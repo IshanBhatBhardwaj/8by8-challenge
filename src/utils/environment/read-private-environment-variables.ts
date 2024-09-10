@@ -39,8 +39,7 @@ export function readPrivateEnvironmentVariables() {
           ['encrypt', 'decrypt'],
         );
         return cryptoKey;
-      } 
-      )
+      })
       .parseAsync(process.env.CRYPTO_KEY),
   };
 }

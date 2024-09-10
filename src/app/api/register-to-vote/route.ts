@@ -48,7 +48,7 @@ export async function POST(response: NextRequest) {
     );
 
     const registerToVoteAPI = await fetchResponse.json();
-    if (registerToVoteAPI.status !== "email sent") {
+    if (registerToVoteAPI.status !== 'email sent') {
       return NextResponse.json(
         { error: registerToVoteAPI.error },
         { status: fetchResponse.status },
@@ -59,9 +59,7 @@ export async function POST(response: NextRequest) {
       user.uid,
       supabaseRegisterBody,
     );
-    userRepo.updateRegisterToVoteAction(user.uid);
-    userRepo.awardVoterRegistrationActionBadge(user.uid, user.badges);
-
+    userRepo.awardAndUpdateVoterRegistrationBadgeAndAction(user);
     const updatedUser = await userRepo.getUserById(user.uid);
     return NextResponse.json(updatedUser, { status: 200 });
   } catch (e) {

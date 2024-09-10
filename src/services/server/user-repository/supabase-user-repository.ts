@@ -6,9 +6,7 @@ import type { UserRepository } from './user-repository';
 import type { User } from '@/model/types/user';
 import type { CreateSupabaseClient } from '../create-supabase-client/create-supabase-client';
 import type { IUserRecordParser } from '../user-record-parser/i-user-record-parser';
-import { ActionBadge } from '@/model/types/action-badge';
 import { Actions } from '@/model/enums/actions';
-import type { Badge } from '@/model/types/badge';
 
 /**
  * An implementation of {@link UserRepository} that interacts with
@@ -20,8 +18,48 @@ export const SupabaseUserRepository = inject(
     constructor(
       private createSupabaseClient: CreateSupabaseClient,
       private userRecordParser: IUserRecordParser,
-    ) {}
+      private canAwardBadge = (user: User): Boolean => {
+        if (
+          user.badges.length >= 8 ||
+          user.completedChallenge ||
+          user.completedActions.registerToVote
+        ) {
+          return false;
+        }
+        return true
+      },
+      private updateRegisterToVoteAction = async (userId: string): Promise<void> => {
+        const supabase = this.createSupabaseClient();
 
+        const { status: status, statusText: statusText, error: challengerUpdateError } = await supabase
+          .from('completed_actions')
+          .update({
+            register_to_vote: true,
+          })
+          .eq('user_id', userId);
+
+        if (challengerUpdateError) {
+          throw new ServerError(statusText, status)
+        }
+      },
+      private awardVoterRegistrationActionBadge = async (userId: string): Promise<void> => {
+        const supabase = this.createSupabaseClient();
+
+      const challengerActionBadge = {
+        action: Actions.VoterRegistration,
+        challenger_id: userId,
+      };
+
+      const { status: status, statusText: statusText, error: challengerActionBadgeInsertionError } = await supabase
+        .from('badges')
+        .insert(challengerActionBadge)
+        .eq('user_id', userId);
+
+      if (challengerActionBadgeInsertionError) {
+        throw new ServerError(statusText, status);
+      }
+      }
+    ) {}
     async getUserById(userId: string): Promise<User | null> {
       const supabase = this.createSupabaseClient();
 
@@ -51,60 +89,21 @@ export const SupabaseUserRepository = inject(
         throw new ServerError('Failed to parse user data.', 400);
       }
     }
-    /**
-     * @updateRegisterToVoteAction
-     * @param id - User's id to get user
-     */
-    async updateRegisterToVoteAction(userId: string): Promise<void> {
-      const supabase = this.createSupabaseClient();
-
-      const { error: challengerUpdateError } = await supabase
-        .from('completed_actions')
-        .update({
-          register_to_vote: true,
-        })
-        .eq('user_id', userId);
-
-      if (challengerUpdateError) {
-        throw new Error(challengerUpdateError.message);
-      }
-    }
+    
     /**
      * @awardUserBadge
-     * @param id - User's id to get user
+     * @param user - A user to access their information
      */
-    async awardVoterRegistrationActionBadge(
-      id: string,
-      badges: Badge[],
+    async awardAndUpdateVoterRegistrationBadgeAndAction(
+      user: User,
     ): Promise<void> {
-      const supabase = this.createSupabaseClient();
 
-      let found = false;
-      const actionBadges = badges.filter(obj => {
-        if ((obj as ActionBadge).action === 'voterRegistration') {
-          found = true;
-        }
-        return (obj as ActionBadge).action !== undefined;
-      });
-
-      if (badges.length >= 8 || found) {
-        //should we be throwing an error here? throw new Error("can not award user a badge")
-        return;
+      if (!this.canAwardBadge(user)) {
+        return
       }
 
-      const challengerActionBadge = {
-        action: Actions.VoterRegistration,
-        challenger_id: id,
-      };
-
-      const { error: challengerActionBadgeInsertionError } = await supabase
-        .from('badges')
-        .insert(challengerActionBadge)
-        .eq('user_id', id);
-
-      if (challengerActionBadgeInsertionError) {
-        throw new Error(challengerActionBadgeInsertionError.message);
-      }
+      await this.awardVoterRegistrationActionBadge(user.uid)
+      await this.updateRegisterToVoteAction(user.uid)
     }
   },
   [

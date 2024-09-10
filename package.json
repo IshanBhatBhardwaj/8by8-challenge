@@ -16,8 +16,6 @@
     "format": "prettier --write \"**/*.+(js|ts|tsx|json)\"",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "create-symlink-supabase-to-src": "node scripts/create-symlink-supabase-to-src.js",
-    "copy-migration-to-test-folder": "node scripts/copy-migration-to-test-folder.js",
     "create-cryptokey": "node scripts/create-cryptoKey.js"
   },
   "dependencies": {

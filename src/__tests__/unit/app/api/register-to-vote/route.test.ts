@@ -36,8 +36,7 @@ describe('POST', () => {
     };
 
     const insertVoterRegistrationInfo = jest.fn();
-    const updateRegisterToVoteAction = jest.fn();
-    const awardVoterRegistrationActionBadge = jest.fn();
+    const awardAndUpdateVoterRegistrationBadgeAndAction = jest.fn();
 
     const containerSpy = jest
       .spyOn(serverContainer, 'get')
@@ -49,10 +48,9 @@ describe('POST', () => {
         } else if (key.name === SERVER_SERVICE_KEYS.UserRepository.name) {
           return Builder<UserRepository>()
             .getUserById(() => Promise.resolve(user))
-            .awardVoterRegistrationActionBadge(
-              awardVoterRegistrationActionBadge,
+            .awardAndUpdateVoterRegistrationBadgeAndAction(
+              awardAndUpdateVoterRegistrationBadgeAndAction,
             )
-            .updateRegisterToVoteAction(updateRegisterToVoteAction)
             .build();
         } else if (key.name === SERVER_SERVICE_KEYS.VoterRepository.name) {
           return Builder<VoterRepository>()
@@ -91,8 +89,7 @@ describe('POST', () => {
     containerSpy.mockRestore();
   }, 100_000);
 
-  it("calls the route with a null user", async() => {
-  
+  it('calls the route with a null user', async () => {
     const containerSpy = jest
       .spyOn(serverContainer, 'get')
       .mockImplementation(key => {
@@ -100,7 +97,7 @@ describe('POST', () => {
           return Builder<Auth>()
             .loadSessionUser(() => Promise.resolve(null))
             .build();
-        } 
+        }
         return getActualService(key);
       });
 
@@ -131,10 +128,9 @@ describe('POST', () => {
     const response = await POST(request);
     expect(response.status).toBe(401);
     containerSpy.mockRestore();
-  })
+  });
 
-  it("calls the route and throws a server error", async () => {
-
+  it('calls the route and throws a server error', async () => {
     const user: User = {
       uid: '0',
       email: 'user@example.com',
@@ -152,7 +148,7 @@ describe('POST', () => {
       challengeEndTimestamp: DateTime.now().plus({ days: 8 }).toUnixInteger(),
       inviteCode: 'test-invite-code',
     };
-  
+
     const containerSpy = jest
       .spyOn(serverContainer, 'get')
       .mockImplementation(key => {
@@ -200,10 +196,9 @@ describe('POST', () => {
     const responseBody = await response.json();
     expect(responseBody.error).toBe('User already exists.');
     containerSpy.mockRestore();
-  })
+  });
 
-  it("calls the route with faulty data in the register body, causing the /registertovote api fetch to fail", async() => {
-
+  it('calls the route with faulty data in the register body, causing the /registertovote api fetch to fail', async () => {
     const user: User = {
       uid: '0',
       email: 'user@example.com',
@@ -229,7 +224,7 @@ describe('POST', () => {
           return Builder<Auth>()
             .loadSessionUser(() => Promise.resolve(user))
             .build();
-        } 
+        }
         return getActualService(key);
       });
 
@@ -260,9 +255,9 @@ describe('POST', () => {
     const response = await POST(request);
     expect(response.status).toBe(400);
     containerSpy.mockRestore();
-  }, 100_000)
+  }, 100_000);
 
-  it("calls the route with invalid register body, causing the parsing to fail", async () => {
+  it('calls the route with invalid register body, causing the parsing to fail', async () => {
     const user: User = {
       uid: '0',
       email: 'user@example.com',
@@ -288,7 +283,7 @@ describe('POST', () => {
           return Builder<Auth>()
             .loadSessionUser(() => Promise.resolve(user))
             .build();
-        } 
+        }
         return getActualService(key);
       });
 
@@ -319,7 +314,5 @@ describe('POST', () => {
     const response = await POST(request);
     expect(response.status).toBe(400);
     containerSpy.mockRestore();
-  })
-
-
+  });
 });

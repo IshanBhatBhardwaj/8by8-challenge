@@ -19,8 +19,6 @@ Replace the values of the variables inside .env with appropriate entries. Values
 Values for Supabase variables will be displayed in the terminal after running either `npm run supabase-dev:start` or `npm run supabase-test:start`. These values will be
 the same for both commands, and will be the same each time you run these commands.
 
-Run the script 'npm run create-symlink-supabase-to-src'. This will create a symlink between the supabase/migrations/20240711063356_initial_schema.sql file -> src/__tests__/supabase/migrations/20240711063356_initial_schema.sql file. 
-Note, if you are a windows user, you may have to run the command prompt as an administrator to run the script.
 =======
 ##  Selenium Tests 
 =======

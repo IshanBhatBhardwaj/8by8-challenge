@@ -112,7 +112,7 @@ describe('VoterRegistrationRepository class', () => {
     expect(decryptedObject).toEqual(registerBody);
   });
 
-  it("throws server error when id is not valid", async () => {
+  it('throws server error when id is not valid', async () => {
     const user = await userRepository.getUserById(authChallenger.id);
     if (!user) {
       throw new Error(`No user found with id: ${authChallenger.id}`);
@@ -138,6 +138,10 @@ describe('VoterRegistrationRepository class', () => {
       createSupabaseClient,
       dataEncryptor,
     );
-    await expect(voterRegistrationRepository.insertVoterRegistrationInfo("", registerBody)).rejects.toThrow(new ServerError("invalid input syntax for type uuid: \"\"", 500))
-  })
+    await expect(
+      voterRegistrationRepository.insertVoterRegistrationInfo('', registerBody),
+    ).rejects.toThrow(
+      new ServerError('invalid input syntax for type uuid: ""', 500),
+    );
+  });
 });
