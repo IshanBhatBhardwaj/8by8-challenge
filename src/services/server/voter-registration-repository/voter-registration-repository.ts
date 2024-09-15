@@ -16,8 +16,8 @@ export const VoterRegistrationRepository = inject(
     constructor(
       private createSupabaseClient: CreateSupabaseClient,
       private encryptor: Encryptor,
-      private shouldEncrypt = (key: string) : boolean => {
-        return key !== "user_id"
+      private shouldEncrypt = (key: string): boolean => {
+        return key !== 'user_id';
       },
     ) {}
     /**
@@ -34,20 +34,16 @@ export const VoterRegistrationRepository = inject(
       const encryptRegisterBody = async (
         obj: typeof RegisterBody,
       ): Promise<typeof RegisterBody> => {
-        const cryptoKey = await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY;
+        const cryptoKey = await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY_1;
 
         const encryptedObject = { ...obj };
         for (const [key, value] of Object.entries(encryptedObject)) {
           if (this.shouldEncrypt(key)) {
             const typedKey = key as keyof typeof encryptedObject;
             const encryptedValue = await encryptor.encrypt(value, cryptoKey);
-            const base64EncodedValue =
-              Buffer.from(encryptedValue).toString('base64');
-
-            encryptedObject[typedKey] = base64EncodedValue;
-          }
-          else {
-            encryptedObject["user_id"] = id
+            encryptedObject[typedKey] = encryptedValue;
+          } else {
+            encryptedObject['user_id'] = id;
           }
         }
         return encryptedObject;
@@ -65,5 +61,8 @@ export const VoterRegistrationRepository = inject(
       }
     }
   },
-  [SERVER_SERVICE_KEYS.createSupabaseServiceRoleClient, SERVER_SERVICE_KEYS.Encryptor],
+  [
+    SERVER_SERVICE_KEYS.createSupabaseServiceRoleClient,
+    SERVER_SERVICE_KEYS.Encryptor,
+  ],
 );

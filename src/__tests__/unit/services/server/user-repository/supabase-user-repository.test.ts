@@ -10,6 +10,11 @@ import { AuthError } from '@supabase/supabase-js';
 import type { CreateSupabaseClient } from '@/services/server/create-supabase-client/create-supabase-client';
 import type { IUserRecordParser } from '@/services/server/user-record-parser/i-user-record-parser';
 import type { Badge } from '@/model/types/badge';
+import { serverContainer } from '@/services/server/container';
+import { saveActualImplementation } from '@/utils/test/save-actual-implementation';
+import { Builder } from 'builder-pattern';
+import type { UserRepository } from '@/services/server/user-repository/user-repository';
+import { SERVER_SERVICE_KEYS } from '@/services/server/keys';
 import {
   createSupabseClientFunction,
   createUserRepository,
@@ -319,11 +324,10 @@ describe('SupabaseUserRepository', () => {
     }
 
     expect(newUser.completedActions.registerToVote).toBe(true);
-    
+
     const newUserActionBadge = [{ action: 'voterRegistration' }];
     expect(newUser.badges.length === 1);
     expect(newUser.badges === newUserActionBadge);
-    
   });
 
   it('does not award the user a badge when they have more than 8 badges or already have the voterRegistration badge', async () => {
@@ -345,10 +349,9 @@ describe('SupabaseUserRepository', () => {
       { action: Actions.SharedChallenge },
       { action: Actions.SharedChallenge },
     ];
+    user.badges = badgesArray;
 
-    await userRepository.awardAndUpdateVoterRegistrationBadgeAndAction(
-      user
-    );
+    await userRepository.awardAndUpdateVoterRegistrationBadgeAndAction(user);
     let newUser = await userRepository.getUserById(user.uid);
     if (!newUser) {
       throw new Error(`No newUser found with id: ${user.uid}`);
@@ -356,9 +359,7 @@ describe('SupabaseUserRepository', () => {
     expect(newUser.badges.length === 0);
 
     badgesArray = [{ action: Actions.VoterRegistration }];
-    await userRepository.awardAndUpdateVoterRegistrationBadgeAndAction(
-      user
-    );
+    await userRepository.awardAndUpdateVoterRegistrationBadgeAndAction(user);
 
     newUser = await userRepository.getUserById(user.uid);
     if (!newUser) {
@@ -367,20 +368,24 @@ describe('SupabaseUserRepository', () => {
     expect(newUser.badges.length === 0);
   });
 
-  // it('throws a challengerUpdateError for the updateRegisterToVoteAction private method when there is an invalid user id', async () => {
-  //   const supabase = createSupabaseClient();
+  it('throws a challengerUpdateError for the updateRegisterToVoteAction private method when there is an invalid user id', async () => {
+    jest
+      .spyOn(userRepository as any, 'awardVoterRegistrationActionBadge')
+      .mockImplementationOnce(async () => Promise<void>);
+    const supabase = createSupabaseClient();
 
-  //   const authChallenger = await createUser(supabase);
+    const authChallenger = await createUser(supabase);
 
-  //   const user = await userRepository.getUserById(authChallenger.id);
-  //   if (!user) {
-  //     throw new Error(`No user found with id: ${authChallenger.id}`);
-  //   }
-  //   expect(user.completedActions.registerToVote).toBe(false);
-  //   await expect(userRepository.updateRegisterToVoteAction('')).rejects.toThrow(
-  //     new Error('invalid input syntax for type uuid: ""'),
-  //   );
-  // });
+    const user = await userRepository.getUserById(authChallenger.id);
+    if (!user) {
+      throw new Error(`No user found with id: ${authChallenger.id}`);
+    }
+    expect(user.completedActions.registerToVote).toBe(false);
+    user.uid = '';
+    await expect(
+      userRepository.awardAndUpdateVoterRegistrationBadgeAndAction(user),
+    ).rejects.toThrow(new ServerError('Bad Request', 400));
+  });
 
   it('throws a challengerUpdateError for the awardVoterRegistrationActionBadge private method when there is an invalid user id', async () => {
     const supabase = createSupabaseClient();
@@ -390,9 +395,9 @@ describe('SupabaseUserRepository', () => {
     if (!user) {
       throw new Error(`No user found with id: ${authChallenger.id}`);
     }
-    user.uid = ""
+    user.uid = '';
     await expect(
       userRepository.awardAndUpdateVoterRegistrationBadgeAndAction(user),
-    ).rejects.toThrow(new Error("Bad Request"));
+    ).rejects.toThrow(new ServerError('Bad Request', 400));
   });
 });

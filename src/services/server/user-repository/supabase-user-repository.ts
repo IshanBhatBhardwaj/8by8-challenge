@@ -26,12 +26,18 @@ export const SupabaseUserRepository = inject(
         ) {
           return false;
         }
-        return true
+        return true;
       },
-      private updateRegisterToVoteAction = async (userId: string): Promise<void> => {
+      private updateRegisterToVoteAction = async (
+        userId: string,
+      ): Promise<void> => {
         const supabase = this.createSupabaseClient();
 
-        const { status: status, statusText: statusText, error: challengerUpdateError } = await supabase
+        const {
+          status: status,
+          statusText: statusText,
+          error: challengerUpdateError,
+        } = await supabase
           .from('completed_actions')
           .update({
             register_to_vote: true,
@@ -39,26 +45,32 @@ export const SupabaseUserRepository = inject(
           .eq('user_id', userId);
 
         if (challengerUpdateError) {
-          throw new ServerError(statusText, status)
+          throw new ServerError(statusText, status);
         }
       },
-      private awardVoterRegistrationActionBadge = async (userId: string): Promise<void> => {
+      private awardVoterRegistrationActionBadge = async (
+        userId: string,
+      ): Promise<void> => {
         const supabase = this.createSupabaseClient();
 
-      const challengerActionBadge = {
-        action: Actions.VoterRegistration,
-        challenger_id: userId,
-      };
+        const challengerActionBadge = {
+          action: Actions.VoterRegistration,
+          challenger_id: userId,
+        };
 
-      const { status: status, statusText: statusText, error: challengerActionBadgeInsertionError } = await supabase
-        .from('badges')
-        .insert(challengerActionBadge)
-        .eq('user_id', userId);
+        const {
+          status: status,
+          statusText: statusText,
+          error: challengerActionBadgeInsertionError,
+        } = await supabase
+          .from('badges')
+          .insert(challengerActionBadge)
+          .eq('user_id', userId);
 
-      if (challengerActionBadgeInsertionError) {
-        throw new ServerError(statusText, status);
-      }
-      }
+        if (challengerActionBadgeInsertionError) {
+          throw new ServerError(statusText, status);
+        }
+      },
     ) {}
     async getUserById(userId: string): Promise<User | null> {
       const supabase = this.createSupabaseClient();
@@ -89,7 +101,7 @@ export const SupabaseUserRepository = inject(
         throw new ServerError('Failed to parse user data.', 400);
       }
     }
-    
+
     /**
      * @awardUserBadge
      * @param user - A user to access their information
@@ -97,13 +109,12 @@ export const SupabaseUserRepository = inject(
     async awardAndUpdateVoterRegistrationBadgeAndAction(
       user: User,
     ): Promise<void> {
-
       if (!this.canAwardBadge(user)) {
-        return
+        return;
       }
 
-      await this.awardVoterRegistrationActionBadge(user.uid)
-      await this.updateRegisterToVoteAction(user.uid)
+      await this.awardVoterRegistrationActionBadge(user.uid);
+      await this.updateRegisterToVoteAction(user.uid);
     }
   },
   [

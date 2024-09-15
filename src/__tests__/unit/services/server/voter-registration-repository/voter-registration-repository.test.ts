@@ -82,20 +82,15 @@ describe('VoterRegistrationRepository class', () => {
     if (!dbUser) throw new Error('no user found');
 
     const decryptInformation = async (encryptedObject: typeof registerBody) => {
-      const cryptoKey = await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY;
+      const cryptoKey = await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY_1;
 
       const decryptedObject = { ...encryptedObject };
-      for (const key in encryptedObject) {
-        if (Object.prototype.hasOwnProperty.call(encryptedObject, key)) {
+      for (const [key, value] of Object.entries(decryptedObject)) {
+        if (key === 'user_id') {
+          decryptedObject['user_id'] = encryptedObject['user_id'];
+        } else {
           const typedKey = key as keyof typeof encryptedObject;
-          const encryptedValueAsString = Buffer.from(
-            encryptedObject[typedKey],
-            'base64',
-          ).toString('utf-8');
-          if (typedKey === 'user_id') {
-            decryptedObject['user_id'] = encryptedObject['user_id'];
-            continue;
-          }
+          const encryptedValueAsString = encryptedObject[typedKey];
           const decryptedValue = await dataEncryptor.decrypt(
             encryptedValueAsString,
             cryptoKey,

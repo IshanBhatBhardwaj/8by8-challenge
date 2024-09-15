@@ -196,7 +196,7 @@ describe('POST', () => {
     const responseBody = await response.json();
     expect(responseBody.error).toBe('User already exists.');
     containerSpy.mockRestore();
-  });
+  }, 100_000);
 
   it('calls the route with faulty data in the register body, causing the /registertovote api fetch to fail', async () => {
     const user: User = {

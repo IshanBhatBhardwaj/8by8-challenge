@@ -6,7 +6,5 @@ import type { Badge } from '@/model/types/badge';
  */
 export interface UserRepository {
   getUserById(userId: string): Promise<User | null>;
-  awardAndUpdateVoterRegistrationBadgeAndAction(
-    user: User,
-  ): Promise<void>;
+  awardAndUpdateVoterRegistrationBadgeAndAction(user: User): Promise<void>;
 }

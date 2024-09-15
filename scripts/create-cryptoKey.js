@@ -3,6 +3,13 @@ const path = require('path');
 
 (async () => {
   try {
+    //count how many cryptoKey we have
+    const envFilePath = path.join(__dirname, '../.env');
+    const envFileContent = await fs.readFile(envFilePath, 'utf-8');
+    const cryptoKeyCount = (envFileContent.match(/CRYPTO_KEY_/g) || []).length;
+
+    const newKeyName = `CRYPTO_KEY_${cryptoKeyCount + 1}`;
+
     const cryptoKey = await crypto.subtle.generateKey(
       {
         name: 'AES-GCM',
@@ -14,14 +21,13 @@ const path = require('path');
 
     const rawKey = await crypto.subtle.exportKey('raw', cryptoKey);
     const keyAsBase64 = btoa(String.fromCharCode(...new Uint8Array(rawKey)));
-    const envFilePath = path.join(__dirname, '../.env');
-    const newEnvVariable = `CRYPTO_KEY=${keyAsBase64}`;
+    const newEnvVariable = `${newKeyName}=${keyAsBase64}`;
 
     fs.appendFile(envFilePath, `\n${newEnvVariable}`, err => {
       if (err) {
         console.error('Error writing to .env file:', err);
       } else {
-        console.log('.env file updated with Crypto Key successfully!');
+        console.log(`.env file updated with ${newKeyName} successfully!`);
       }
     });
   } catch (e) {
