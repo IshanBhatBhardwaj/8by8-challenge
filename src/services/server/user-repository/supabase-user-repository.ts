@@ -59,7 +59,7 @@ export const SupabaseUserRepository = inject(
         const supabase = this.createSupabaseClient();
 
         const challengerActionBadge = {
-          action: Actions.VoterRegistration,
+          action_type: Actions.VoterRegistration,
           challenger_id: userId,
         };
 

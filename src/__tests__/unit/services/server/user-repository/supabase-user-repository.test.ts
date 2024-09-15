@@ -221,7 +221,6 @@ describe('SupabaseUserRepository', () => {
     }
     expect(user.completedActions.registerToVote).toBe(false);
     expect(user.badges.length === 0);
-
     await userRepository.awardAndUpdateVoterRegistrationBadgeAndAction(user);
 
     const newUser = await userRepository.getUserById(user.uid);
