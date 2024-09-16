@@ -3,12 +3,14 @@ const path = require('path');
 
 (async () => {
   try {
-    //count how many cryptoKey we have
-    const envFilePath = path.join(__dirname, '../.env');
-    const envFileContent = await fs.readFile(envFilePath, 'utf-8');
-    const cryptoKeyCount = (envFileContent.match(/CRYPTO_KEY_/g) || []).length;
+    const cryptoKeyName = process.argv.slice(2);
 
-    const newKeyName = `CRYPTO_KEY_${cryptoKeyCount + 1}`;
+    const envFilePath = path.join(__dirname, '../.env');
+    let newKeyName = `CRYPTO_KEY`;
+
+    if (cryptoKeyName.length >= 1) {
+      newKeyName += `_${cryptoKeyName[0]}`;
+    }
 
     const cryptoKey = await crypto.subtle.generateKey(
       {

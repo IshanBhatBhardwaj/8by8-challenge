@@ -82,7 +82,7 @@ describe('VoterRegistrationRepository class', () => {
     if (!dbUser) throw new Error('no user found');
 
     const decryptInformation = async (encryptedObject: typeof registerBody) => {
-      const cryptoKey = await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY_1;
+      const cryptoKey = PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY["CRYPTO_KEY"];
 
       const decryptedObject = { ...encryptedObject };
       for (const [key, value] of Object.entries(decryptedObject)) {

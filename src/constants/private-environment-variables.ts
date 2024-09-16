@@ -12,4 +12,17 @@ import { readPrivateEnvironmentVariables } from '@/utils/environment/read-privat
  * there is a need to change the value of environment variables throughout a
  * test suite, etc.
  */
-export const PRIVATE_ENVIRONMENT_VARIABLES = readPrivateEnvironmentVariables();
+
+let PRIVATE_ENVIRONMENT_VARIABLES: {
+  TURNSTILE_SECRET_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY: string;
+  CRYPTO_KEY: {
+    [key: string]: CryptoKey
+  }
+};
+
+(async () => {
+  PRIVATE_ENVIRONMENT_VARIABLES = await readPrivateEnvironmentVariables();
+})();
+
+export { PRIVATE_ENVIRONMENT_VARIABLES };

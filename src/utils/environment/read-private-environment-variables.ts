@@ -6,7 +6,30 @@ import { z } from 'zod';
  * Reads and validates private environment variables. Can only be invoked from
  * server-side code.
  */
-export function readPrivateEnvironmentVariables() {
+export async function readPrivateEnvironmentVariables() {
+  const cryptoKeys = Object.keys(process.env).filter(key =>
+    key.startsWith('CRYPTO_KEY'),
+  );
+
+  const cryptoKeyPromises = cryptoKeys.map(async (key) => {
+    const rawKey = new Uint8Array(
+      atob(process.env[key]!)
+        .split('')
+        .map(char => char.charCodeAt(0)),
+    );
+
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      rawKey,
+      { name: 'AES-GCM' },
+      true,
+      ['encrypt', 'decrypt'],
+    );
+
+    return { [key]: cryptoKey };
+  });
+
+  const resolvedCryptoKeys = await Promise.all(cryptoKeyPromises);
   return {
     TURNSTILE_SECRET_KEY: z
       .string({
@@ -20,26 +43,12 @@ export function readPrivateEnvironmentVariables() {
           'Could not load environment variable SUPABASE_SERVICE_ROLE_KEY',
       })
       .parse(process.env.SUPABASE_SERVICE_ROLE_KEY),
-    CRYPTO_KEY_1: z
-      .string({
-        required_error: 'Could not load environment variable CRYPTO_KEY',
-      })
-      .transform(async (key: string): Promise<CryptoKey> => {
-        const rawKey = new Uint8Array(
-          atob(key)
-            .split('')
-            .map(char => char.charCodeAt(0)),
-        );
-
-        const cryptoKey = await crypto.subtle.importKey(
-          'raw',
-          rawKey,
-          { name: 'AES-GCM' },
-          true,
-          ['encrypt', 'decrypt'],
-        );
-        return cryptoKey;
-      })
-      .parseAsync(process.env.CRYPTO_KEY_1),
+    CRYPTO_KEY: Object.assign({}, ...resolvedCryptoKeys),
   };
 }
+
+
+
+
+
+
