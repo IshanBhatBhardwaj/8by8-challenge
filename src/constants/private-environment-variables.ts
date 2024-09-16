@@ -13,16 +13,5 @@ import { readPrivateEnvironmentVariables } from '@/utils/environment/read-privat
  * test suite, etc.
  */
 
-let PRIVATE_ENVIRONMENT_VARIABLES: {
-  TURNSTILE_SECRET_KEY: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
-  CRYPTO_KEY: {
-    [key: string]: CryptoKey
-  }
-};
 
-(async () => {
-  PRIVATE_ENVIRONMENT_VARIABLES = await readPrivateEnvironmentVariables();
-})();
-
-export { PRIVATE_ENVIRONMENT_VARIABLES };
+export const PRIVATE_ENVIRONMENT_VARIABLES = readPrivateEnvironmentVariables();

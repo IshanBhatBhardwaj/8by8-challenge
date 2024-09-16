@@ -34,7 +34,7 @@ export const VoterRegistrationRepository = inject(
       const encryptRegisterBody = async (
         obj: typeof RegisterBody,
       ): Promise<typeof RegisterBody> => {
-        const cryptoKey = PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY["CRYPTO_KEY"];
+        const cryptoKey = await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY;
 
         const encryptedObject = { ...obj };
         for (const [key, value] of Object.entries(encryptedObject)) {
