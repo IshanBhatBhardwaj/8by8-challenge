@@ -1,7 +1,9 @@
 import { Cookies } from '@/services/server/cookies/cookies';
 import { MockNextCookies } from '@/utils/test/mock-next-cookies';
+import { WebCryptoSubtleEncryptor } from '@/services/server/encryptor/web-crypto-subtle-encryptor';
 
 const mockCookies = new MockNextCookies();
+const webCryptoSubtleEncryptor = new WebCryptoSubtleEncryptor();
 
 jest.mock('next/headers', () => ({
   cookies: () => mockCookies.cookies(),
@@ -15,7 +17,7 @@ describe('Cookies', () => {
   afterAll(() => jest.unmock('next/headers'));
 
   it('sets, retrieves, and deletes cookies.', async () => {
-    const cookies = new Cookies();
+    const cookies = new Cookies(webCryptoSubtleEncryptor);
     const emailForSignIn = 'user@example.com';
     await cookies.setEmailForSignIn(emailForSignIn);
     await expect(cookies.loadEmailForSignIn()).resolves.toBe(emailForSignIn);

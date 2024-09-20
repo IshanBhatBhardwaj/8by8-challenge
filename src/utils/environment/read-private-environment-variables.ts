@@ -7,7 +7,6 @@ import { z } from 'zod';
  * server-side code.
  */
 export function readPrivateEnvironmentVariables() {
-  
   return {
     TURNSTILE_SECRET_KEY: z
       .string({
@@ -21,9 +20,10 @@ export function readPrivateEnvironmentVariables() {
           'Could not load environment variable SUPABASE_SERVICE_ROLE_KEY',
       })
       .parse(process.env.SUPABASE_SERVICE_ROLE_KEY),
-    CRYPTO_KEY: z
+    CRYPTO_KEY_REGISTRATION: z
       .string({
-        required_error: 'Could not load environment variable CRYPTO_KEY',
+        required_error:
+          'Could not load environment variable CRYPTO_KEY_REGISTRATION',
       })
       .transform(async (key: string): Promise<CryptoKey> => {
         const rawKey = new Uint8Array(
@@ -40,12 +40,27 @@ export function readPrivateEnvironmentVariables() {
         );
         return cryptoKey;
       })
-      .parseAsync(process.env.CRYPTO_KEY),
+      .parseAsync(process.env.CRYPTO_KEY_REGISTRATION),
+    CRYPTO_KEY_COOKIES: z
+      .string({
+        required_error:
+          'Could not load environment variable CRYPTO_KEY_COOKIES',
+      })
+      .transform(async (key: string): Promise<CryptoKey> => {
+        const rawKey = new Uint8Array(
+          atob(key)
+            .split('')
+            .map(char => char.charCodeAt(0)),
+        );
+        const cryptoKey = await crypto.subtle.importKey(
+          'raw',
+          rawKey,
+          { name: 'AES-GCM' },
+          true,
+          ['encrypt', 'decrypt'],
+        );
+        return cryptoKey;
+      })
+      .parseAsync(process.env.CRYPTO_KEY_COOKIES),
   };
 }
-
-
-
-
-
-

@@ -13,5 +13,4 @@ import { readPrivateEnvironmentVariables } from '@/utils/environment/read-privat
  * test suite, etc.
  */
 
-
 export const PRIVATE_ENVIRONMENT_VARIABLES = readPrivateEnvironmentVariables();
