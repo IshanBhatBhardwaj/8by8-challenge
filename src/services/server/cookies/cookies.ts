@@ -18,13 +18,11 @@ export const Cookies = inject(
   class Cookies implements ICookies {
     constructor(private encryptor: Encryptor) {}
 
-  
     async setEmailForSignIn(email: string): Promise<void> {
       const cryptoKey = await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY_COOKIES;
       const encryptedEmail = await this.encryptor.encrypt(email, cryptoKey);
 
       return new Promise(resolve => {
-        
         cookies().set(CookieNames.EmailForSignIn, encryptedEmail, {
           expires: this.getEmailForSignInCookieExpiry(),
           sameSite: 'strict',

@@ -26,4 +26,17 @@ describe('Cookies', () => {
     cookies.clearEmailForSignIn();
     await expect(cookies.loadEmailForSignIn()).resolves.toBe('');
   });
+
+  it('retrieves and deletes the inviteCode cookie.', () => {
+    const cookies = new Cookies(webCryptoSubtleEncryptor);
+    const inviteCode = createId();
+    mockCookies.cookies().set(CookieNames.InviteCode, inviteCode);
+
+    let retrievedValue = cookies.getInviteCode();
+    expect(retrievedValue).toBe(inviteCode);
+
+    cookies.clearInviteCode();
+    retrievedValue = cookies.getInviteCode();
+    expect(retrievedValue).toBeUndefined();
+  });
 });
