@@ -50,7 +50,7 @@ export function readPrivateEnvironmentVariables() {
     CRYPTO_KEY_COOKIES: z
       .string({
         required_error:
-          'Could not load environment variable VOTER_REGISTRATION_REPO_ENCRYPTION_KEY',
+          'Could not load environment variable CRYPTO_KEY_COOKIES',
       })
       .transform(async (key: string): Promise<CryptoKey> => {
         const rawKey = new Uint8Array(
