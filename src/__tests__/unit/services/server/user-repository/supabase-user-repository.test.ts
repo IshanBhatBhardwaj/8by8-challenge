@@ -13,18 +13,14 @@ import { SERVER_SERVICE_KEYS } from '@/services/server/keys';
 import type { CreateSupabaseClient } from '@/services/server/create-supabase-client/create-supabase-client';
 import type { IUserRecordParser } from '@/services/server/user-record-parser/i-user-record-parser';
 import type { Badge } from '@/model/types/badges/badge';
-import {
-  createSupabseClientFunction,
-  createUserRepository,
-} from '@/utils/test/create-user';
 
 describe('SupabaseUserRepository', () => {
   let userRepository: InstanceType<typeof SupabaseUserRepository>;
   let createSupabaseClient: CreateSupabaseClient;
 
   beforeEach(() => {
-    createSupabaseClient = createSupabseClientFunction();
-    userRepository = createUserRepository(createSupabaseClient);
+    createSupabaseClient = createSupabaseServiceRoleClient
+    userRepository = new SupabaseUserRepository(createSupabaseClient, new UserRecordParser())
   });
 
   afterEach(() => {
