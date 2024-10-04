@@ -16,7 +16,7 @@ jobs:
       GOOGLE_MAPS_API_KEY: ''
       VOTER_REGISTRATION_REPO_ENCRYPTION_KEY: 'DvViBWSQfwFGSetPOVbIWZrMXYJh4wTVSE/+1QI/VTI='
       CRYPTO_KEY_COOKIES: 'V8/+Dd0HQ2RLKur/oeFel2uLDSi7B1gXp6TjQVp8iOk='
-r    steps:
+    steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
