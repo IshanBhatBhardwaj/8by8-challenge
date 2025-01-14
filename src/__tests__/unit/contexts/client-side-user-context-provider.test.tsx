@@ -22,23 +22,28 @@ import { Actions } from '@/model/enums/actions';
 import supabaseModule from '@supabase/ssr';
 import { Subject } from 'rxjs';
 import ProgressPage from '@/app/progress/page';
+import { mockDialogMethods } from '@/utils/test/mock-dialog-methods';
+import { VoterRegistrationForm } from '@/app/register/voter-registration-form';
+import { isErrorWithMessage } from '@/utils/shared/is-error-with-message';
+import { calculateDaysRemaining } from '@/app/progress/calculate-days-remaining';
+import { CSRF_HEADER } from '@/utils/csrf/constants';
 import type { User } from '@/model/types/user';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import type { Avatar } from '@/model/types/avatar';
-import { mockDialogMethods } from '@/utils/test/mock-dialog-methods';
+import type { ValueOf } from 'fully-formed';
 
 jest.mock('next/navigation', () => ({
   useRouter: jest.fn(),
 }));
 
 jest.mock('@supabase/ssr', () => ({
-  createBrowserClient: jest.fn().mockImplementation(() => ({
+  createBrowserClient: () => ({
     channel: () => ({
       on: () => ({
         subscribe: jest.fn(),
       }),
     }),
-  })),
+  }),
 }));
 
 describe('ClientSideUserContextProvider', () => {
@@ -46,7 +51,10 @@ describe('ClientSideUserContextProvider', () => {
   let user: UserEvent;
 
   beforeEach(() => {
-    router = Builder<AppRouterInstance>().push(jest.fn()).build();
+    router = Builder<AppRouterInstance>()
+      .push(jest.fn())
+      .prefetch(jest.fn())
+      .build();
     jest.spyOn(navigation, 'useRouter').mockImplementation(() => router);
     user = userEvent.setup();
   });
@@ -143,6 +151,9 @@ describe('ClientSideUserContextProvider', () => {
       expect(fetchSpy).toHaveBeenCalledWith('/api/signup-with-email', {
         method: 'POST',
         body: JSON.stringify(signUpParams),
+        headers: {
+          [CSRF_HEADER]: expect.any(String),
+        },
       }),
     );
 
@@ -206,6 +217,62 @@ describe('ClientSideUserContextProvider', () => {
     fetchSpy.mockRestore();
   });
 
+  it(`makes a request to /api/signup-with-email when signUpWithEmail() is
+  called and throws an error with the message "Too many requests. Please try 
+  again later." when the status of the response is 429.`, async () => {
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce(new Response(null, { status: 429 }));
+
+    function SignUp() {
+      const { signUpWithEmail } = useContextSafely(UserContext, 'SignUp');
+      const { showAlert } = useContextSafely(AlertsContext, 'SignUp');
+
+      return (
+        <button
+          onClick={async () => {
+            try {
+              await signUpWithEmail({
+                email: 'user@example.com',
+                name: 'User',
+                avatar: '0',
+                captchaToken: 'test-token',
+              });
+            } catch (e) {
+              showAlert(isErrorWithMessage(e) ? e.message : '', 'error');
+            }
+          }}
+        >
+          Sign Up
+        </button>
+      );
+    }
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={null}
+          invitedBy={null}
+          emailForSignIn=""
+        >
+          <SignUp />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+
+    await user.click(screen.getByText('Sign Up'));
+
+    await waitFor(() => {
+      const alert = screen.queryByRole('alert');
+      expect(alert).toBeInTheDocument();
+      expect(alert?.textContent).toBe(
+        'Too many requests. Please try again later.',
+      );
+    });
+
+    fetchSpy.mockRestore();
+  });
+
   it(`makes a request to /api/send-otp-to-email when sendOTPToEmail() is
   called, and if the response is ok, it sets emailForSignIn and redirects the
   user to /signin-with-otp.`, async () => {
@@ -251,6 +318,9 @@ describe('ClientSideUserContextProvider', () => {
       expect(fetchSpy).toHaveBeenCalledWith('/api/send-otp-to-email', {
         method: 'POST',
         body: JSON.stringify(sendOTPToEmailParams),
+        headers: {
+          [CSRF_HEADER]: expect.any(String),
+        },
       }),
     );
 
@@ -315,6 +385,63 @@ describe('ClientSideUserContextProvider', () => {
     fetchSpy.mockRestore();
   });
 
+  it(`makes a request to /api/send-otp-to-email when sendOTPToEmail() is
+  called and throws an error with the message "Too many requests. Please try 
+  again later." if the status of the response is 429.`, async () => {
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce(new Response(null, { status: 429 }));
+
+    function SignInWithEmail() {
+      const { sendOTPToEmail } = useContextSafely(
+        UserContext,
+        'SignInWithEmail',
+      );
+      const { showAlert } = useContextSafely(AlertsContext, 'SignInWithEmail');
+
+      return (
+        <button
+          onClick={async () => {
+            try {
+              await sendOTPToEmail({
+                email: 'user@example.com',
+                captchaToken: 'test-token',
+              });
+            } catch (e) {
+              showAlert(isErrorWithMessage(e) ? e.message : '', 'error');
+            }
+          }}
+        >
+          Sign in
+        </button>
+      );
+    }
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={null}
+          invitedBy={null}
+          emailForSignIn=""
+        >
+          <SignInWithEmail />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+
+    await user.click(screen.getByText('Sign in'));
+
+    await waitFor(() => {
+      const alert = screen.queryByRole('alert');
+      expect(alert).toBeInTheDocument();
+      expect(alert?.textContent).toBe(
+        'Too many requests. Please try again later.',
+      );
+    });
+
+    fetchSpy.mockRestore();
+  });
+
   it(`makes a request to /api/resend-otp-to-email when resendOTP() is
   called.`, async () => {
     const fetchSpy = jest
@@ -345,6 +472,9 @@ describe('ClientSideUserContextProvider', () => {
       expect(fetchSpy).toHaveBeenCalledWith('/api/resend-otp-to-email', {
         method: 'POST',
         body: JSON.stringify({ email }),
+        headers: {
+          [CSRF_HEADER]: expect.any(String),
+        },
       }),
     );
 
@@ -355,7 +485,7 @@ describe('ClientSideUserContextProvider', () => {
   throws an error if the response is not ok.`, async () => {
     const fetchSpy = jest
       .spyOn(global, 'fetch')
-      .mockResolvedValueOnce(new Response(null, { status: 429 }));
+      .mockResolvedValueOnce(new Response(null, { status: 403 }));
 
     function ResendOTP() {
       const { resendOTP } = useContextSafely(UserContext, 'ResendOTP');
@@ -394,6 +524,57 @@ describe('ClientSideUserContextProvider', () => {
       const alert = screen.queryByRole('alert');
       expect(alert).toBeInTheDocument();
       expect(alert?.textContent).toBe('Could not resend OTP.');
+    });
+
+    fetchSpy.mockRestore();
+  });
+
+  it(`makes a request to /api/resend-otp-to-email when resendOTP() is called and
+  throws an error with the response "Too many requests. Please try again later." 
+  if the status of the response is 429.`, async () => {
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce(new Response(null, { status: 429 }));
+
+    function ResendOTP() {
+      const { resendOTP } = useContextSafely(UserContext, 'ResendOTP');
+      const { showAlert } = useContextSafely(AlertsContext, 'ResendOTP');
+
+      return (
+        <button
+          onClick={async () => {
+            try {
+              await resendOTP();
+            } catch (e) {
+              showAlert(isErrorWithMessage(e) ? e.message : '', 'error');
+            }
+          }}
+        >
+          Resend OTP
+        </button>
+      );
+    }
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={null}
+          invitedBy={null}
+          emailForSignIn="user@example.com"
+        >
+          <ResendOTP />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+
+    await user.click(screen.getByText('Resend OTP'));
+
+    await waitFor(() => {
+      const alert = screen.queryByRole('alert');
+      expect(alert).toBeInTheDocument();
+      expect(alert?.textContent).toBe(
+        'Too many requests. Please try again later.',
+      );
     });
 
     fetchSpy.mockRestore();
@@ -468,6 +649,9 @@ describe('ClientSideUserContextProvider', () => {
       expect(fetchSpy).toHaveBeenCalledWith('/api/signin-with-otp', {
         method: 'POST',
         body: JSON.stringify({ email: expectedUser.email, otp }),
+        headers: {
+          [CSRF_HEADER]: expect.any(String),
+        },
       }),
     );
 
@@ -528,6 +712,57 @@ describe('ClientSideUserContextProvider', () => {
     fetchSpy.mockRestore();
   });
 
+  it(`makes a request to /api/signin-with-otp when signInWithOTP() is called,
+  and throws an error with the message "Too many requests. Please try again later." 
+  if the status of the response was 429.`, async () => {
+    const fetchSpy = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValueOnce(new Response(null, { status: 429 }));
+
+    function SignInWithOTP() {
+      const { signInWithOTP } = useContextSafely(UserContext, 'SignInWithOTP');
+      const { showAlert } = useContextSafely(AlertsContext, 'SignInWithOTP');
+
+      return (
+        <button
+          onClick={async () => {
+            try {
+              await signInWithOTP({ otp: '123456' });
+            } catch (e) {
+              showAlert(isErrorWithMessage(e) ? e.message : '', 'error');
+            }
+          }}
+        >
+          Sign in
+        </button>
+      );
+    }
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={null}
+          invitedBy={null}
+          emailForSignIn="user@example.com"
+        >
+          <SignInWithOTP />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+
+    await user.click(screen.getByText('Sign in'));
+
+    await waitFor(() => {
+      const alert = screen.queryByRole('alert');
+      expect(alert).toBeInTheDocument();
+      expect(alert?.textContent).toBe(
+        'Too many requests. Please try again later.',
+      );
+    });
+
+    fetchSpy.mockRestore();
+  });
+
   it(`makes a request to /api/signout when signOut() is called and sets the
   user to null if the response is ok.`, async () => {
     const fetchSpy = jest
@@ -575,6 +810,9 @@ describe('ClientSideUserContextProvider', () => {
     await waitFor(() =>
       expect(fetchSpy).toHaveBeenCalledWith('/api/signout', {
         method: 'DELETE',
+        headers: {
+          [CSRF_HEADER]: expect.any(String),
+        },
       }),
     );
 
@@ -814,6 +1052,7 @@ describe('ClientSideUserContextProvider', () => {
     await user.click(screen.getByText(/get reminders/i));
     expect(fetchSpy).not.toHaveBeenCalledWith(
       '/api/award-election-reminders-badge',
+      expect.anything(),
     );
     fetchSpy.mockRestore();
   });
@@ -1170,7 +1409,10 @@ describe('ClientSideUserContextProvider', () => {
     );
 
     await user.click(screen.getByText('Take the challenge'));
-    expect(fetchSpy).not.toHaveBeenCalledWith('/api/take-the-challenge');
+    expect(fetchSpy).not.toHaveBeenCalledWith(
+      '/api/take-the-challenge',
+      expect.anything(),
+    );
     fetchSpy.mockRestore();
   });
 
@@ -1222,7 +1464,10 @@ describe('ClientSideUserContextProvider', () => {
     );
 
     await user.click(screen.getByText('Take the challenge'));
-    expect(fetchSpy).not.toHaveBeenCalledWith('/api/take-the-challenge');
+    expect(fetchSpy).not.toHaveBeenCalledWith(
+      '/api/take-the-challenge',
+      expect.anything(),
+    );
     fetchSpy.mockRestore();
   });
 
@@ -1298,12 +1543,721 @@ describe('ClientSideUserContextProvider', () => {
       </AlertsContextProvider>,
     );
 
-    const alert = await screen.getByRole('alert');
+    const alert = screen.getByRole('alert');
     expect(alert.classList).toContain('hidden');
 
     await user.click(screen.getByText('Take the challenge'));
     expect(alert.classList).not.toContain('hidden');
     expect(alert.textContent).toBe('There was a problem taking the challenge.');
+    fetchSpy.mockRestore();
+  });
+
+  const registerBody: ValueOf<InstanceType<typeof VoterRegistrationForm>> = {
+    eligibility: {
+      email: 'user@example.com',
+      zip: '94043',
+      dob: '01-01-2000',
+      isCitizen: true,
+      eighteenPlus: true,
+      firstTimeRegistrant: false,
+    },
+    names: {
+      yourName: {
+        title: 'Mr.',
+        first: 'Test',
+        middle: '',
+        last: 'User',
+        suffix: '',
+      },
+    },
+    addresses: {
+      homeAddress: {
+        streetLine1: '1600 Amphitheatre Pkwy',
+        streetLine2: '',
+        city: 'Mountain View',
+        state: 'CA',
+        zip: '94043',
+        phone: '',
+        phoneType: 'Mobile',
+      },
+    },
+    otherDetails: {
+      party: 'Independent',
+      race: 'Decline to state',
+      hasStateLicenseOrID: true,
+      idNumber: '0000',
+      receiveEmailsFromRTV: true,
+      receiveSMSFromRTV: true,
+    },
+  };
+
+  it(`makes a request to /api/register-to-vote when registerToVote() is called, 
+  and if the response is ok, updates the user.`, async () => {
+    const signedInUser: User = {
+      uid: '1',
+      email: 'user@example.com',
+      name: 'User',
+      avatar: '0',
+      type: UserType.Challenger,
+      completedActions: {
+        electionReminders: false,
+        registerToVote: false,
+        sharedChallenge: false,
+      },
+      badges: [],
+      contributedTo: [],
+      completedChallenge: false,
+      challengeEndTimestamp: DateTime.now().plus({ days: 8 }).toUnixInteger(),
+      inviteCode: '',
+    };
+
+    const fetchSpy = jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(route => {
+        if (route === '/api/register-to-vote') {
+          return Promise.resolve(
+            NextResponse.json(
+              {
+                user: {
+                  ...signedInUser,
+                  completedActions: {
+                    ...signedInUser.completedActions,
+                    registerToVote: true,
+                  },
+                  badges: [
+                    {
+                      action: Actions.RegisterToVote,
+                    },
+                  ],
+                },
+              },
+              { status: 200 },
+            ),
+          );
+        }
+
+        return Promise.resolve(new Response(null, { status: 200 }));
+      });
+
+    let updatedUser: User | null = null;
+
+    function RegisterToVote() {
+      const { user, registerToVote } = useContextSafely(
+        UserContext,
+        'RegisterToVote',
+      );
+
+      useEffect(() => {
+        updatedUser = user;
+      }, [user]);
+
+      return (
+        <button onClick={() => registerToVote(registerBody)}>Register</button>
+      );
+    }
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={signedInUser}
+          invitedBy={null}
+          emailForSignIn="user@example.com"
+        >
+          <RegisterToVote />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+
+    await waitFor(() => expect(updatedUser).toStrictEqual(signedInUser));
+    await user.click(screen.getByText(/register/i));
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    expect(updatedUser).toEqual({
+      ...signedInUser,
+      completedActions: {
+        ...signedInUser.completedActions,
+        registerToVote: true,
+      },
+      badges: [
+        {
+          action: Actions.RegisterToVote,
+        },
+      ],
+    });
+
+    fetchSpy.mockRestore();
+  });
+
+  it(`does not make a request to /api/register-to-vote when registerToVote() is
+  called but the user has already registered to vote.`, async () => {
+    const signedInUser: User = {
+      uid: '1',
+      email: 'user@example.com',
+      name: 'User',
+      avatar: '0',
+      type: UserType.Challenger,
+      completedActions: {
+        registerToVote: true,
+        electionReminders: false,
+        sharedChallenge: false,
+      },
+      badges: [],
+      contributedTo: [],
+      completedChallenge: false,
+      challengeEndTimestamp: DateTime.now().plus({ days: 8 }).toUnixInteger(),
+      inviteCode: '',
+    };
+
+    const fetchSpy = jest.spyOn(globalThis, 'fetch').mockImplementation(() => {
+      return Promise.resolve(NextResponse.json(null, { status: 200 }));
+    });
+
+    function RegisterToVote() {
+      const { registerToVote } = useContextSafely(
+        UserContext,
+        'RegisterToVote',
+      );
+
+      return (
+        <button onClick={() => registerToVote(registerBody)}>Register</button>
+      );
+    }
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={signedInUser}
+          invitedBy={null}
+          emailForSignIn="user@example.com"
+        >
+          <RegisterToVote />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+
+    await user.click(screen.getByText(/register/i));
+    expect(fetchSpy).not.toHaveBeenCalledWith(
+      '/api/register-to-vote',
+      expect.anything(),
+    );
+    fetchSpy.mockRestore();
+  });
+
+  it(`does not make a request to /api/register-to-vote when registerToVote() is
+  called but the user is signed out.`, async () => {
+    const fetchSpy = jest.spyOn(globalThis, 'fetch');
+
+    function RegisterToVote() {
+      const { registerToVote } = useContextSafely(
+        UserContext,
+        'RegisterToVote',
+      );
+
+      return (
+        <button onClick={() => registerToVote(registerBody)}>Register</button>
+      );
+    }
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={null}
+          invitedBy={null}
+          emailForSignIn=""
+        >
+          <RegisterToVote />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+
+    await user.click(screen.getByText(/register/i));
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it(`throws an error when registerToVote() is called and the response from
+  /api/register-to-vote is not ok.`, async () => {
+    const signedInUser: User = {
+      uid: '1',
+      email: 'user@example.com',
+      name: 'User',
+      avatar: '0',
+      type: UserType.Challenger,
+      completedActions: {
+        registerToVote: false,
+        electionReminders: false,
+        sharedChallenge: false,
+      },
+      badges: [],
+      contributedTo: [],
+      completedChallenge: false,
+      challengeEndTimestamp: DateTime.now().plus({ days: 8 }).toUnixInteger(),
+      inviteCode: '',
+    };
+
+    const fetchSpy = jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(route => {
+        if (route === '/api/register-to-vote') {
+          return Promise.resolve(
+            NextResponse.json(
+              {
+                error: 'An unexpected error occurred.',
+              },
+              { status: 500 },
+            ),
+          );
+        }
+
+        return Promise.resolve(new Response(null, { status: 200 }));
+      });
+
+    mockDialogMethods();
+
+    function RegisterToVote() {
+      const { registerToVote } = useContextSafely(
+        UserContext,
+        'RegisterToVote',
+      );
+      const { showAlert } = useContextSafely(AlertsContext, 'RegisterToVote');
+
+      return (
+        <button
+          onClick={async () => {
+            try {
+              await registerToVote(registerBody);
+            } catch (e) {
+              showAlert('There was a problem registering to vote.', 'error');
+            }
+          }}
+        >
+          Register to Vote
+        </button>
+      );
+    }
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={signedInUser}
+          invitedBy={null}
+          emailForSignIn=""
+        >
+          <RegisterToVote />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert.classList).toContain('hidden');
+
+    await user.click(screen.getByText(/register to vote/i));
+    expect(alert.classList).not.toContain('hidden');
+    expect(alert.textContent).toBe('There was a problem registering to vote.');
+    fetchSpy.mockRestore();
+  });
+
+  test(`When shareChallenge is called, if the user is signed in and hasn't 
+  previously shared the challenge, it makes a PUT request to 
+  /api/share-challenge, and then updates the user.`, async () => {
+    const signedInUser: User = {
+      uid: '1',
+      email: 'user@example.com',
+      name: 'User',
+      avatar: '0',
+      type: UserType.Challenger,
+      completedActions: {
+        electionReminders: false,
+        registerToVote: false,
+        sharedChallenge: false,
+      },
+      badges: [],
+      contributedTo: [],
+      completedChallenge: false,
+      challengeEndTimestamp: DateTime.now().plus({ days: 8 }).toUnixInteger(),
+      inviteCode: '',
+    };
+
+    const fetchSpy = jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(route => {
+        if (route === '/api/share-challenge') {
+          return Promise.resolve(
+            NextResponse.json(
+              {
+                user: {
+                  ...signedInUser,
+                  completedActions: {
+                    ...signedInUser.completedActions,
+                    sharedChallenge: true,
+                  },
+                  badges: [
+                    {
+                      action: Actions.SharedChallenge,
+                    },
+                  ],
+                },
+              },
+              { status: 200 },
+            ),
+          );
+        }
+
+        return Promise.resolve(new Response(null, { status: 200 }));
+      });
+
+    let updatedUser: User | null = null;
+
+    function ShareTheChallenge() {
+      const { user, shareChallenge } = useContextSafely(
+        UserContext,
+        'ShareTheChallenge',
+      );
+
+      useEffect(() => {
+        updatedUser = user;
+      }, [user]);
+
+      return <button onClick={shareChallenge}>Share</button>;
+    }
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={signedInUser}
+          invitedBy={null}
+          emailForSignIn="user@example.com"
+        >
+          <ShareTheChallenge />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+
+    await waitFor(() => expect(updatedUser).toStrictEqual(signedInUser));
+    await user.click(screen.getByText(/Share/i));
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    expect(updatedUser).toEqual({
+      ...signedInUser,
+      completedActions: {
+        ...signedInUser.completedActions,
+        sharedChallenge: true,
+      },
+      badges: [
+        {
+          action: Actions.SharedChallenge,
+        },
+      ],
+    });
+
+    fetchSpy.mockRestore();
+  });
+
+  it(`should throw an error when shareChallenge() is called and the response 
+  from /api/share-challenge is not ok.`, async () => {
+    const signedInUser: User = {
+      uid: '1',
+      email: 'user@example.com',
+      name: 'User',
+      avatar: '0',
+      type: UserType.Challenger,
+      completedActions: {
+        electionReminders: false,
+        registerToVote: false,
+        sharedChallenge: false,
+      },
+      badges: [],
+      contributedTo: [],
+      completedChallenge: false,
+      challengeEndTimestamp: DateTime.now().plus({ days: 8 }).toUnixInteger(),
+      inviteCode: '',
+    };
+
+    const fetchSpy = jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(route => {
+        if (route === '/api/share-challenge') {
+          return Promise.resolve(
+            NextResponse.json(
+              {
+                message: 'Error making the put request status 400',
+              },
+              { status: 400 },
+            ),
+          );
+        }
+
+        return Promise.resolve(new Response(null, { status: 200 }));
+      });
+
+    function ShareChallenge() {
+      const { shareChallenge } = useContextSafely(
+        UserContext,
+        'ShareChallenge',
+      );
+      const { showAlert } = useContextSafely(AlertsContext, 'ShareChallenge');
+
+      const onClick = async () => {
+        try {
+          await shareChallenge();
+        } catch (e) {
+          showAlert('There was a problem sending the request.', 'error');
+        }
+      };
+
+      return <button onClick={onClick}>Share</button>;
+    }
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={signedInUser}
+          invitedBy={null}
+          emailForSignIn="user@example.com"
+        >
+          <ShareChallenge />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+
+    await user.click(screen.getByText(/Share/i));
+    await waitFor(() => {
+      const alert = screen.queryByRole('alert');
+      expect(alert).toBeInTheDocument();
+      expect(alert?.textContent).toBe(
+        'There was a problem sending the request.',
+      );
+    });
+
+    fetchSpy.mockRestore();
+  });
+
+  it(`should return without making an api request when the user is null and 
+  shareChallenge() is called.`, async () => {
+    const fetchSpy = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(null, {
+        status: 200,
+      }),
+    );
+
+    function ShareChallenge() {
+      const { shareChallenge } = useContextSafely(
+        UserContext,
+        'ShareChallenge',
+      );
+      return <button onClick={shareChallenge}>Share</button>;
+    }
+    const user = userEvent.setup();
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={null}
+          invitedBy={null}
+          emailForSignIn="user@example.com"
+        >
+          <ShareChallenge />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+    await user.click(screen.getByText(/Share/i));
+    expect(fetchSpy).not.toHaveBeenCalledWith(
+      '/api/share-challenge',
+      expect.anything(),
+    );
+    fetchSpy.mockRestore();
+  });
+
+  test(`When restartChallenge is called, a PUT request should be made to 
+  /api/restart-challenge, and if the response is ok, the user should be 
+  updated.`, async () => {
+    const signedInUser: User = {
+      uid: '1',
+      email: 'user@example.com',
+      name: 'User',
+      avatar: '0',
+      type: UserType.Challenger,
+      completedActions: {
+        electionReminders: false,
+        registerToVote: false,
+        sharedChallenge: false,
+      },
+      badges: [],
+      contributedTo: [],
+      completedChallenge: false,
+      challengeEndTimestamp: 0,
+      inviteCode: '',
+    };
+
+    const fetchSpy = jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(route => {
+        if (route === '/api/restart-challenge') {
+          return Promise.resolve(
+            NextResponse.json(
+              {
+                user: {
+                  ...signedInUser,
+                  challengeEndTimestamp: DateTime.now()
+                    .plus({ days: 8 })
+                    .toUnixInteger(),
+                },
+              },
+              { status: 200 },
+            ),
+          );
+        }
+
+        return Promise.resolve(new Response(null, { status: 200 }));
+      });
+
+    let updatedUser: User | null = null;
+
+    function RestartChallenge() {
+      const { user, restartChallenge } = useContextSafely(
+        UserContext,
+        'RestartChallenge',
+      );
+
+      useEffect(() => {
+        updatedUser = user;
+      }, [user]);
+
+      return <button onClick={restartChallenge}>Restart</button>;
+    }
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={signedInUser}
+          invitedBy={null}
+          emailForSignIn="user@example.com"
+        >
+          <RestartChallenge />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+
+    await waitFor(() => expect(updatedUser).toStrictEqual(signedInUser));
+    expect(calculateDaysRemaining(updatedUser)).toBe(0);
+
+    await user.click(screen.getByText(/restart/i));
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    expect(calculateDaysRemaining(updatedUser)).toBe(8);
+
+    fetchSpy.mockRestore();
+  });
+
+  it(`should throw an error when restartChallenge() is called and the response 
+  from /api/restart-challenge is not ok.`, async () => {
+    const signedInUser: User = {
+      uid: '1',
+      email: 'user@example.com',
+      name: 'User',
+      avatar: '0',
+      type: UserType.Challenger,
+      completedActions: {
+        electionReminders: false,
+        registerToVote: false,
+        sharedChallenge: false,
+      },
+      badges: [],
+      contributedTo: [],
+      completedChallenge: false,
+      challengeEndTimestamp: 0,
+      inviteCode: '',
+    };
+
+    const fetchSpy = jest
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(route => {
+        if (route === '/api/restart-challenge') {
+          return Promise.resolve(
+            NextResponse.json(
+              {
+                message: 'Error making the put request status 400',
+              },
+              { status: 400 },
+            ),
+          );
+        }
+
+        return Promise.resolve(new Response(null, { status: 200 }));
+      });
+
+    function RestartChallenge() {
+      const { restartChallenge } = useContextSafely(
+        UserContext,
+        'RestartChallenge',
+      );
+      const { showAlert } = useContextSafely(AlertsContext, 'ShareChallenge');
+
+      const onClick = async () => {
+        try {
+          await restartChallenge();
+        } catch (e) {
+          showAlert('There was a problem sending the request.', 'error');
+        }
+      };
+
+      return <button onClick={onClick}>Restart</button>;
+    }
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={signedInUser}
+          invitedBy={null}
+          emailForSignIn="user@example.com"
+        >
+          <RestartChallenge />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+
+    await user.click(screen.getByText(/restart/i));
+    await waitFor(() => {
+      const alert = screen.queryByRole('alert');
+      expect(alert).toBeInTheDocument();
+      expect(alert?.textContent).toBe(
+        'There was a problem sending the request.',
+      );
+    });
+
+    fetchSpy.mockRestore();
+  });
+
+  it(`should return without making an api request when the user is null and 
+  restartChallenge() is called.`, async () => {
+    const fetchSpy = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(null, {
+        status: 200,
+      }),
+    );
+
+    function RestartChallenge() {
+      const { restartChallenge } = useContextSafely(
+        UserContext,
+        'RestartChallenge',
+      );
+      return <button onClick={restartChallenge}>Restart</button>;
+    }
+    const user = userEvent.setup();
+
+    render(
+      <AlertsContextProvider>
+        <ClientSideUserContextProvider
+          user={null}
+          invitedBy={null}
+          emailForSignIn="user@example.com"
+        >
+          <RestartChallenge />
+        </ClientSideUserContextProvider>
+      </AlertsContextProvider>,
+    );
+    await user.click(screen.getByText(/restart/i));
+    expect(fetchSpy).not.toHaveBeenCalledWith(
+      '/api/restart-challenge',
+      expect.anything(),
+    );
     fetchSpy.mockRestore();
   });
 });

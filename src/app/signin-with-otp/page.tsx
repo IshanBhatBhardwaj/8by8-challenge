@@ -1,6 +1,7 @@
 'use client';
 import { useState, type FormEventHandler } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useForm, ValidityUtils } from 'fully-formed';
 import { useContextSafely } from '@/hooks/use-context-safely';
 import { UserContext } from '@/contexts/user-context';
@@ -14,8 +15,8 @@ import { LoadingWheel } from '@/components/utils/loading-wheel';
 import { isSignedOut } from '@/components/guards/is-signed-out';
 import { useCountdown } from '@/hooks/use-countdown';
 import { Button } from '@/components/utils/button';
+import { isErrorWithMessage } from '@/utils/shared/is-error-with-message';
 import styles from './styles.module.scss';
-import Link from 'next/link';
 
 export default isSignedOut(
   sentOTP(function SignInWithOTP() {
@@ -40,7 +41,12 @@ export default isSignedOut(
         await userContext.signInWithOTP(form.state.value);
       } catch (e) {
         setIsLoading(false);
-        showAlert('There was a problem signing in. Please try again.', 'error');
+        showAlert(
+          isErrorWithMessage(e) ?
+            e.message
+          : 'There was a problem signing in. Please try again.',
+          'error',
+        );
       }
     };
 
@@ -52,7 +58,12 @@ export default isSignedOut(
         await userContext.resendOTP();
         showAlert('Code sent. Please check your email.', 'success');
       } catch (e) {
-        showAlert('Error sending code. Please try again.', 'error');
+        showAlert(
+          isErrorWithMessage(e) ?
+            e.message
+          : 'Error sending code. Please try again.',
+          'error',
+        );
       } finally {
         restartCountdown();
         setIsLoading(false);

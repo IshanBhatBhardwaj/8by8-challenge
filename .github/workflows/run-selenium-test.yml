@@ -22,10 +22,6 @@ jobs:
       ACCESS_TOKEN: ${{ secrets.VERCEL_AUTOMATION_SECRET }}
     steps:
       - uses: actions/checkout@v4
-      - uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: 127
-          install-chromedriver: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'

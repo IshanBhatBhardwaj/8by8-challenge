@@ -155,7 +155,35 @@ describe('SignInWithOTPPage', () => {
     });
   });
 
-  it('displays an error message if signInWithOTP throws an error.', async () => {
+  it(`displays an error message if signInWithOTP throws an error that contains a 
+  message.`, async () => {
+    const errorMessage = 'Too many requests. Please try again later.';
+
+    userContextValue.signInWithOTP = () => {
+      throw new Error(errorMessage);
+    };
+
+    render(
+      <AlertsContextProvider>
+        <UserContext.Provider value={userContextValue}>
+          <SignInWithOTPPage />
+        </UserContext.Provider>
+      </AlertsContextProvider>,
+    );
+
+    const otp = screen.getByLabelText('One time passcode*');
+    await user.type(otp, '123456');
+
+    const signInBtn = screen.getAllByText('Sign in')[0];
+    await user.click(signInBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(errorMessage);
+    });
+  });
+
+  it(`displays a generic error message if signInWithOTP throws an error that 
+  does not contain a message.`, async () => {
     userContextValue.signInWithOTP = () => {
       throw new Error();
     };
@@ -263,7 +291,37 @@ describe('SignInWithOTPPage', () => {
     });
   });
 
-  it('renders an alert when resendOTP fails.', async () => {
+  it(`renders an alert containing an error message when resendOTP throws an 
+  error containing a message.`, async () => {
+    const errorMessage = 'Too many requests. Please try again later.';
+    userContextValue.resendOTP = () => Promise.reject(new Error(errorMessage));
+
+    render(
+      <AlertsContextProvider>
+        <UserContext.Provider value={userContextValue}>
+          <SignInWithOTPPage />
+        </UserContext.Provider>
+      </AlertsContextProvider>,
+    );
+
+    act(() => jest.advanceTimersByTime(60000));
+    await waitFor(() =>
+      expect(screen.queryByText('Resend Code')).toBeInstanceOf(
+        HTMLButtonElement,
+      ),
+    );
+
+    await user.click(screen.getByText('Resend Code'));
+    await waitFor(() => {
+      const alert = screen.queryByRole('alert');
+      expect(alert).toBeInTheDocument();
+      expect(alert?.className.includes('error')).toBeTruthy();
+      expect(alert?.textContent).toBe(errorMessage);
+    });
+  });
+
+  it(`renders an alert with a generic error message when resendOTP throws an 
+  error that does not contain a message.`, async () => {
     userContextValue.resendOTP = () => Promise.reject();
 
     render(

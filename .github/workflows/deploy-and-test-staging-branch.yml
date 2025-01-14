@@ -5,13 +5,16 @@ on:
     branches:
       - staging
 
+env:
+  SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+
 jobs:
   reset-db:
     runs-on: ubuntu-latest
+    environment: staging
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_ID: ${{ secrets.STAGING_SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
@@ -20,13 +23,14 @@ jobs:
           version: latest
 
       - run: supabase link --project-ref $SUPABASE_PROJECT_ID
-      - run: yes | supabase db reset --linked
+      - run: supabase db reset --linked <<< 'y'
 
   deploy:
     runs-on: ubuntu-latest
     needs: reset-db
     outputs:
       preview-url: ${{ steps.deploy.outputs.preview-url }}
+    environment: staging
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -35,7 +39,17 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm install --global vercel@canary
       - run: vercel pull --yes --environment=preview --token=$VERCEL_TOKEN
+      - run: |
+          echo "NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> $GITHUB_ENV
+          echo "TURNSTILE_SECRET_KEY=${{ secrets.TURNSTILE_SECRET_KEY }}" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> $GITHUB_ENV
+          echo "VOTER_REGISTRATION_REPO_ENCRYPTION_KEY=${{ secrets.VOTER_REGISTRATION_REPO_ENCRYPTION_KEY }}" >> $GITHUB_ENV
+          echo "GOOGLE_MAPS_API_KEY=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> $GITHUB_ENV
+          echo "CRYPTO_KEY_COOKIES=${{ secrets.CRYPTO_KEY_COOKIES }}" >> $GITHUB_ENV
       - run: vercel build --token=$VERCEL_TOKEN
+      - run: node scripts/create-or-update-vercel-environment-variables.js preview
       - id: deploy
         run: echo "preview-url=$(vercel deploy --prebuilt --token=$VERCEL_TOKEN)" >> $GITHUB_OUTPUT
 

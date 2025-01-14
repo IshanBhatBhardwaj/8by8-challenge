@@ -201,7 +201,42 @@ describe('SignInPage', () => {
     });
   });
 
-  it('displays an error message if sendOTPToEmail throws an error.', async () => {
+  it(`displays an error message when sendOTPToEmail throws an error that 
+  contains a message.`, async () => {
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY =
+      CLOUDFLARE_TURNSTILE_DUMMY_SITE_KEYS.ALWAYS_PASSES;
+
+    const errorMessage = 'Too many requests. Please try again later.';
+
+    userContextValue = Builder<UserContextType>()
+      .sendOTPToEmail(() => {
+        throw new Error(errorMessage);
+      })
+      .build();
+
+    const user = userEvent.setup();
+
+    render(
+      <AlertsContextProvider>
+        <UserContext.Provider value={userContextValue}>
+          <SignInPage />
+        </UserContext.Provider>
+      </AlertsContextProvider>,
+    );
+
+    const email = screen.getByLabelText('Email address*');
+    await user.type(email, 'user@example.com');
+
+    const signInBtn = screen.getByText('Sign in');
+    await user.click(signInBtn);
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(errorMessage);
+    });
+  });
+
+  it(`displays a generic error message if sendOTPToEmail throws an error that 
+  does not contain a message.`, async () => {
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY =
       CLOUDFLARE_TURNSTILE_DUMMY_SITE_KEYS.ALWAYS_PASSES;
 

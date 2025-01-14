@@ -13,6 +13,7 @@ import { validateAddressesWithGoogleMaps } from './validate-addresses/validate-a
 import { SupabaseVoterRegistrationDataRepository } from './voter-registration-data-repository/supabase-voter-registration-data-repository';
 import { createSupabaseServiceRoleClient } from './create-supabase-client/create-supabase-service-role-client';
 import { SupabaseInvitationsRepository } from './invitations-repository/supabase-invitations-repository';
+import { createVercelKVRateLimiter } from './create-rate-limiter/create-vercel-kv-rate-limiter';
 
 /**
  * An inversion of control container that should be used to obtain instances of
@@ -68,5 +69,9 @@ export const serverContainer = ContainerBuilder.createBuilder()
   .registerClass(
     SERVER_SERVICE_KEYS.VoterRegistrationDataRepository,
     SupabaseVoterRegistrationDataRepository,
+  )
+  .registerFunction(
+    SERVER_SERVICE_KEYS.createRateLimiter,
+    createVercelKVRateLimiter,
   )
   .build();

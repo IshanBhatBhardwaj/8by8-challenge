@@ -17,6 +17,7 @@ import { focusOnElementById } from '@/utils/client/focus-on-element-by-id';
 import { scrollToElementById } from '@/utils/client/scroll-to-element-by-id';
 import { FormInvalidError } from '@/utils/client/form-invalid-error';
 import { LoadingWheel } from '@/components/utils/loading-wheel';
+import { isErrorWithMessage } from '@/utils/shared/is-error-with-message';
 import styles from './styles.module.scss';
 
 export default isSignedOut(function SignUp() {
@@ -45,7 +46,12 @@ export default isSignedOut(function SignUp() {
           focusOnElementById(firstNonValidInputId);
         }
       } else {
-        showAlert('Something went wrong. Please try again.', 'error');
+        showAlert(
+          isErrorWithMessage(e) ?
+            e.message
+          : 'Something went wrong. Please try again.',
+          'error',
+        );
       }
     }
   };

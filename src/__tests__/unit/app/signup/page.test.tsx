@@ -251,7 +251,51 @@ describe('SignUpPage', () => {
     });
   });
 
-  it('displays an error message if signUpWithEmail throws an error.', async () => {
+  it(`displays an error message if signUpWithEmail throws an error that contains 
+  a message.`, async () => {
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY =
+      CLOUDFLARE_TURNSTILE_DUMMY_SITE_KEYS.ALWAYS_PASSES;
+
+    const errorMessage = 'Too many requests. Please try again later.';
+
+    userContextValue = Builder<UserContextType>()
+      .signUpWithEmail(() => {
+        throw new Error(errorMessage);
+      })
+      .build();
+
+    const user = userEvent.setup();
+
+    render(
+      <AlertsContextProvider>
+        <UserContext.Provider value={userContextValue}>
+          <SignUpPage />
+        </UserContext.Provider>
+      </AlertsContextProvider>,
+    );
+
+    const name = screen.getByLabelText('Name*');
+    await user.type(name, 'user');
+
+    const email = screen.getByLabelText('Email address*');
+    await user.type(email, 'user@example.com');
+
+    const confirmEmail = screen.getByLabelText('Re-enter email address*');
+    await user.type(confirmEmail, 'user@example.com');
+
+    const submitButton = screen.getAllByText('Sign Up')[1];
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('alert')).toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(errorMessage);
+    });
+  });
+
+  it(`displays a generic error message if signUpWithEmail throws an error that 
+  does not contain a message.`, async () => {
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY =
       CLOUDFLARE_TURNSTILE_DUMMY_SITE_KEYS.ALWAYS_PASSES;
 

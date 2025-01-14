@@ -67,5 +67,9 @@ export function readPrivateEnvironmentVariables() {
         return cryptoKey;
       })
       .parseAsync(process.env.CRYPTO_KEY_COOKIES),
+    APP_ENV: z
+      .enum(['development', 'production'])
+      .default('development')
+      .parse(process.env.APP_ENV),
   };
 }

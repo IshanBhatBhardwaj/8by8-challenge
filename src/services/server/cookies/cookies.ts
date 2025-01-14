@@ -3,6 +3,9 @@ import { inject } from 'undecorated-di';
 import { cookies } from 'next/headers';
 import { DateTime } from 'luxon';
 import { CookieNames } from '@/constants/cookie-names';
+import { Encryptor } from '../encryptor/encryptor';
+import { SERVER_SERVICE_KEYS } from '../keys';
+import { PRIVATE_ENVIRONMENT_VARIABLES } from '@/constants/private-environment-variables';
 import type { ICookies } from './i-cookies';
 import { Encryptor } from '../encryptor/encryptor';
 import { SERVER_SERVICE_KEYS } from '../keys';
@@ -19,20 +22,24 @@ export const Cookies = inject(
     constructor(private encryptor: Encryptor) {}
 
     async setEmailForSignIn(email: string): Promise<void> {
-      const cryptoKey = await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY_COOKIES;
-      const encryptedEmail = await this.encryptor.encrypt(email, cryptoKey);
+      const encryptionKey =
+        await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY_COOKIES;
+      const encryptedEmail = await this.encryptor.encrypt(email, encryptionKey);
 
       return new Promise(resolve => {
         cookies().set(CookieNames.EmailForSignIn, encryptedEmail, {
           expires: this.getEmailForSignInCookieExpiry(),
+          httpOnly: true,
           sameSite: 'strict',
+          secure: PRIVATE_ENVIRONMENT_VARIABLES.APP_ENV === 'production',
         });
         resolve();
       });
     }
 
     async loadEmailForSignIn(): Promise<string> {
-      const CryptoKey = await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY_COOKIES;
+      const encryptionKey =
+        await PRIVATE_ENVIRONMENT_VARIABLES.CRYPTO_KEY_COOKIES;
 
       return new Promise(resolve => {
         const encryptedEmail = cookies().get(CookieNames.EmailForSignIn);
@@ -42,7 +49,7 @@ export const Cookies = inject(
         }
         const cookie = this.encryptor.decrypt(
           encryptedEmailAsString,
-          CryptoKey,
+          encryptionKey,
         );
         resolve(cookie);
       });

@@ -10,6 +10,7 @@ import type { CreateSupabaseClient } from './create-supabase-client/create-supab
 import type { USStateInformation } from './us-state-information/us-state-information';
 import type { ValidateAddresses } from './validate-addresses/validate-addresses';
 import type { InvitationsRepository } from './invitations-repository/invitations-repository';
+import type { CreateRateLimiter } from './create-rate-limiter/create-rate-limiter';
 
 const { keys } = Keys.createKeys()
   .addKey('Auth')
@@ -35,7 +36,9 @@ const { keys } = Keys.createKeys()
   .addKey('InvitationsRepository')
   .forType<InvitationsRepository>()
   .addKey('VoterRegistrationDataRepository')
-  .forType<VoterRegistrationDataRepository>();
+  .forType<VoterRegistrationDataRepository>()
+  .addKey('createRateLimiter')
+  .forType<CreateRateLimiter>();
 
 /**
  * Keys that can be used to retrieve service classes, functions, etc. from an

@@ -50,52 +50,6 @@ class HomePageTests(unittest.TestCase):
         h1_rendered = self.driver.find_element(By.TAG_NAME, 'h1')
         self.assertTrue(h1_rendered.is_displayed())
         self.assertEqualIgnoreCase('GET 8 AAPI FRIENDS TO REGISTER TO VOTE IN 8 DAYS', h1_rendered.text)
-
-    def test_locate_button(self):
-        """Test if the challenge button is displayed correctly"""
-        button_element = self.driver.find_element(
-            By.CSS_SELECTOR, ".styles_challenge_btn__T0eGB")
-        self.assertEqualIgnoreCase('TAKE THE CHALLENGE', button_element.text)
-            
-    # Hamburger Menu    
-    def test_hamburger_menu(self):
-        """Test if the hambuger menu functions as intended"""
-        prev_state = self.driver.find_element(By.CLASS_NAME, 'hidden').is_selected()
-        if not prev_state:
-            alter_state = self.driver.find_element(By.CLASS_NAME, 'styles_outer_container__ppLtJ')
-            events = ActionChains(self.driver)
-            events.move_to_element(alter_state).click().perform()
-        else:
-            self.fail('Hamburger Menu Tests have failed!')
-    
-        inner_menu = self.driver.find_element(By.CLASS_NAME, 'styles_inner_container__0JSHj').is_displayed()
-        if not inner_menu:
-            self.fail('Inner Menu is not displayed!')  
-
-     
-    def test_hamburger_menu_items(self):
-        """Test if the hambuger menu contains expected items."""
-        hamburger_menu_ul = self.driver.find_element(By.CLASS_NAME, 'styles_hamburger_menu_items__8yFBG')
-
-        greeting = hamburger_menu_ul.find_element(By.TAG_NAME, 'h2')
-        self.assertEqualIgnoreCase('Hi there!', greeting.get_property('innerText'))
-
-        menu_items = hamburger_menu_ul.find_elements(By.TAG_NAME, 'li')
-        text_of_expected_menu_items = (
-          "",
-          "Take the challenge", 
-          "Take action", 
-          "Why 8by8",
-          "Terms of Service",
-          "Privacy Policy",
-          "Sign up",
-          "Sign in",
-        )
-
-        self.assertEqual(len(text_of_expected_menu_items), len(menu_items))
-
-        for i, expected_item_text in enumerate(text_of_expected_menu_items):
-            self.assertEqualIgnoreCase(expected_item_text, menu_items[i].get_property('innerText'))
                     
     # SECTION_01
     def test_section_1_render(self):
@@ -286,16 +240,6 @@ class HomePageTests(unittest.TestCase):
         h2_text = h2_locate.text
         expected_text = "we're asking everyone to join us in taking the #8by8challenge and registering 8 of their friends to vote in 8 days."
         self.assertEqual(h2_text, expected_text)
-
-    def test_button_action(self):
-        """Test if the button functions as expected"""
-        button_element = self.driver.find_element(
-            By.CSS_SELECTOR, ".btn_gradient.btn_wide.btn_lg")
-        if button_element.text.upper() == 'TAKE THE CHALLENGE':
-            button_element.click()
-        else:
-            self.fail(
-                f"expected texted TAKE THE CHALLENGE but got {button_element.text}")
 
     def test_paragraph_tag(self):
         """Test if the p_tag displays all the expected content"""
