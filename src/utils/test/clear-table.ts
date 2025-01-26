@@ -1,5 +1,16 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+/**
+ * Clears a table from Supabase
+ * 
+ * @remarks
+ * Return value should be zero. 
+ *  
+ * @param tableName - Name of the table
+ * @param supabase - supabaseClient instance
+ * 
+ * @returns The number of rows 
+ */
 export async function clearTable(
   tableName: string,
   supabase: SupabaseClient,

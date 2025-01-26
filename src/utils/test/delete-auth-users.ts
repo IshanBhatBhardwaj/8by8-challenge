@@ -1,5 +1,14 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+/**
+ * Deletes all auth users from Supabase 
+ * 
+ * @remarks 
+ * Return value should be zero
+ * 
+ * @param supabase - supabaseClient instance
+ * @returns The number of auth users 
+ */
 export async function deleteAuthUsers(
   supabase: SupabaseClient,
 ): Promise<number> {

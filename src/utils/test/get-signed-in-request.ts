@@ -6,6 +6,21 @@ import { createServerClient } from '@supabase/ssr';
 import { NextRequest } from 'next/server';
 import { MockNextCookies } from './mock-next-cookies';
 
+/**
+ * Given some NextRequest arguments, returns a new NextRequest where the user is signed-in
+ * 
+ * @remarks
+ * Learn more about generateLink and verifyOtp here
+ * https://supabase.com/docs/reference/javascript/auth-admin-updateuserbyid
+ * https://supabase.com/docs/reference/javascript/auth-verifyotp
+ * 
+ * Note that was not in the verityOtp doc above:
+ * supabase.auth.verifyOtp uses our custom mockCookies to set access_token and refresh_token
+ * 
+ * @param ...args - arguments for creating a NextRequest
+ * 
+ * @returns A mocked signed-in NextRequest
+ */
 export async function getSignedInRequest(
   ...args: ConstructorParameters<typeof NextRequest>
 ) {
