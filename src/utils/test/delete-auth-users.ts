@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  * Deletes all auth users from Supabase 
  * 
  * @remarks 
- * Return value should be zero
+ * Returns the number of rows deleted
  * 
  * @param supabase - supabaseClient instance
  * @returns The number of auth users 

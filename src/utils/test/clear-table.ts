@@ -4,7 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  * Clears a table from Supabase
  * 
  * @remarks
- * Return value should be zero. 
+ * Returns the number of rows deleted
  *  
  * @param tableName - Name of the table
  * @param supabase - supabaseClient instance

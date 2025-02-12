@@ -16,7 +16,7 @@ import type { User } from '@/model/types/user';
  * Note that was not in the verityOtp doc above:
  * supabase.auth.verifyOtp uses our custom mockCookies to set access_token and refresh_token
  * 
- * @param user - User
+ * @param user - {@link User}
  * @param ...args - arguments for creating a NextRequest
  * 
  * @returns A mocked signed-in NextRequest

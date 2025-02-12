@@ -5,6 +5,8 @@
  * that is a function. If the value is not a function, the key is excluded!
  * 
  * @template T - The object type from which method keys are extracted.
+ * 
+ * @returns A union of the keys that correspond to methods
  */
 type MethodKeys<T extends object> = {
   [K in keyof T]: T[K] extends (...args: any[]) => any ? K : never;
@@ -16,8 +18,6 @@ type MethodKeys<T extends object> = {
  * This function creates a wrapper around the specified method of an object
  * and ensures that the original implementation is preserved, even if the 
  * method is mocked or overridden later.
- * 
- * ...Mind blown!
  * 
  * @remarks
  * The `.call` method is used to ensure the correct `this` context when 
