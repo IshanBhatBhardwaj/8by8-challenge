@@ -5,13 +5,13 @@ import type {
 
 /**
  * Mocks cookies from next/header.
- * 
+ *
  * @remarks
- * Used for tests as cookies are only available in browser. 
- * 
+ * Used for tests as cookies are only available in browser.
+ *
  * @example
  * const mockCookies = new MockNextCookies();
- * 
+ *
  * mockCookies.cookies().set(8by8-invite-code, 123);
  * mockCookies.cookies().get(8by8-invite-code);
  */

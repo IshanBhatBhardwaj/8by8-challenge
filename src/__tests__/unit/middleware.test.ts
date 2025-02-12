@@ -179,11 +179,11 @@ describe('middleware', () => {
 
   it(`redirects the user to /progress if the route it receives is signed-out 
   only and the user is signed as a challenger.`, async () => {
-    const user = await new SupabaseUserRecordBuilder('user@example.com')
-      .type(UserType.Challenger)
-      .build();
-
     for (const route of SIGNED_OUT_ONLY_ROUTES) {
+      const user = await new SupabaseUserRecordBuilder('user@example.com')
+        .type(UserType.Challenger)
+        .build();
+
       const request = await getSignedInRequestWithUser(user, host + route, {
         method: 'GET',
         ip,
@@ -351,11 +351,11 @@ describe('middleware', () => {
 
   it(`does not redirect the user if the route it receives is signed-in only and
   the user is signed in.`, async () => {
-    const user = await new SupabaseUserRecordBuilder('user@example.com')
-    .type(UserType.Challenger)
-    .build();
-
     for (const route of SIGNED_IN_ONLY_ROUTES) {
+      const user = await new SupabaseUserRecordBuilder('user@example.com')
+        .type(UserType.Challenger)
+        .build();
+
       const request = await getSignedInRequestWithUser(user, host + route, {
         method: 'GET',
         ip,

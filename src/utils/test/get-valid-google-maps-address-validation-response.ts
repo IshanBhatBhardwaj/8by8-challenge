@@ -4,11 +4,11 @@ import type { ProcessableResponse } from '@/services/server/validate-addresses/v
 /**
  * @remarks
  * Generates a mocked response simulating a valid address validation result from the Google Maps API.
- * 
- * @param address 
- * 
+ *
+ * @param address
+ *
  * @returns A `ProcessableResponse` object that mimics the structure of a response from the Google Maps API.
- * 
+ *
  * @example
  * See validate-addresses-with-google-maps.test.ts for a helpful example!
  */
